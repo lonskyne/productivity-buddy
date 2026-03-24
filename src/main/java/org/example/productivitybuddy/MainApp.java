@@ -7,12 +7,18 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import org.example.productivitybuddy.controller.MainController;
 import org.example.productivitybuddy.model.ProcessRegistry;
-import org.example.productivitybuddy.scanner.ProcessScannerThread;
+import org.example.productivitybuddy.scanner.ScheduledScanner;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class MainApp extends Application {
 
-    private ProcessScannerThread scannerThread;
     private final ProcessRegistry registry = new ProcessRegistry();
+    private ScheduledExecutorService scheduler;
+    private ForkJoinPool forkJoinPool;   // managed here
 
     @Override
     public void start(Stage primaryStage) throws Exception {
@@ -37,17 +43,57 @@ public class MainApp extends Application {
         MainController controller = loader.getController();
         controller.setRegistry(registry);
 
-        scannerThread = new ProcessScannerThread(registry);
-        scannerThread.setDaemon(true);
-        scannerThread.start();
+        forkJoinPool = new ForkJoinPool();
+        startScheduledScanner();
+    }
+
+    private void startScheduledScanner() {
+        scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r);
+            t.setDaemon(true);
+            t.setName("ScheduledScanner");
+            return t;
+        });
+
+        ScheduledScanner scannerTask = new ScheduledScanner(registry, forkJoinPool);
+
+        scheduler.scheduleWithFixedDelay(
+                scannerTask,
+                0,
+                registry.REFRESH_MILLISECONDS,
+                TimeUnit.MILLISECONDS
+        );
     }
 
     @Override
     public void stop() throws Exception {
-        super.stop();
-        if (scannerThread != null && scannerThread.isAlive()) {
-            scannerThread.interrupt();
+        // Shutdown the scheduler first
+        if (scheduler != null && !scheduler.isShutdown()) {
+            scheduler.shutdown();
+            try {
+                if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                    scheduler.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                scheduler.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         }
+
+        // Shutdown the ForkJoinPool – optional but good practice
+        if (forkJoinPool != null && !forkJoinPool.isShutdown()) {
+            forkJoinPool.shutdown();
+            try {
+                if (!forkJoinPool.awaitTermination(5, TimeUnit.SECONDS)) {
+                    forkJoinPool.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                forkJoinPool.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        super.stop();
     }
 
     public static void main(String[] args) {

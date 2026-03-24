@@ -1,0 +1,33 @@
+package org.example.productivitybuddy.scanner;
+
+import oshi.SystemInfo;
+import oshi.software.os.OperatingSystem;
+import org.example.productivitybuddy.model.ProcessRegistry;
+
+import java.util.concurrent.ForkJoinPool;
+
+public class ScheduledScanner implements Runnable {
+    private final ProcessRegistry registry;
+    private final ForkJoinPool forkJoinPool;
+    private final SystemInfo systemInfo = new SystemInfo();
+
+    public ScheduledScanner(ProcessRegistry registry, ForkJoinPool forkJoinPool) {
+        this.registry = registry;
+        this.forkJoinPool = forkJoinPool;
+    }
+
+    @Override
+    public void run() {
+        try {
+            OperatingSystem os = systemInfo.getOperatingSystem();
+            var allProcesses = os.getProcesses();   // List<OSProcess>
+
+            ProcessScannerTask rootTask = new ProcessScannerTask(allProcesses, registry);
+
+            forkJoinPool.invoke(rootTask);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
