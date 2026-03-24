@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<?import javafx.scene.chart.PieChart?>
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="org.example.productivitybuddy.controller.MainController">
+
+    <top>
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Button text="Save" onAction="#onSave"/>
+            <Button text="Load" onAction="#onLoad"/>
+            <Button text="Shutdown" onAction="#onShutdown"/>
+        </HBox>
+    </top>
+
+    <center>
+        <TableView fx:id="processTable">
+            <columns>
+                <TableColumn text="PID" fx:id="pidColumn"/>
+                <TableColumn text="Name" fx:id="nameColumn"/>
+                <TableColumn text="CPU %" fx:id="cpuColumn"/>
+                <TableColumn text="RAM" fx:id="ramColumn"/>
+                <TableColumn text="Category" fx:id="categoryColumn"/>
+                <TableColumn text="Total time" fx:id="totalTimeColumn"/>
+            </columns>
+        </TableView>
+    </center>
+
+    <right>
+        <PieChart fx:id="categoryChart"/>
+    </right>
+
+</BorderPane>
