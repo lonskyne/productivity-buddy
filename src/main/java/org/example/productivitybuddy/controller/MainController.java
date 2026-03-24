@@ -6,6 +6,7 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.scene.chart.PieChart;
 import javafx.scene.control.TableCell;
@@ -23,8 +24,8 @@ public class MainController {
     @FXML private TableView<ProcessRecord> processTable;
     @FXML private TableColumn<ProcessRecord, Integer> pidColumn;
     @FXML private TableColumn<ProcessRecord, String> nameColumn;
-    @FXML private TableColumn<ProcessRecord, String> cpuColumn;
-    @FXML private TableColumn<ProcessRecord, String> ramColumn;
+    @FXML private TableColumn<ProcessRecord, Double> cpuColumn;
+    @FXML private TableColumn<ProcessRecord, Double> ramColumn;
     @FXML private TableColumn<ProcessRecord, String> categoryColumn;
     @FXML private TableColumn<ProcessRecord, Double> totalTimeColumn;
 
@@ -52,20 +53,40 @@ public class MainController {
         });
 
         cpuColumn.setCellValueFactory(cellData ->
-                new SimpleStringProperty(
-                        String.format("%.2f", cellData.getValue().getCpuUsage())
-                )
+                new SimpleDoubleProperty(cellData.getValue().getCpuUsage()).asObject()
         );
 
-        ramColumn.setCellValueFactory(cellData -> {
-            double ram = cellData.getValue().getRamUsage();
-            String formatted = ram >= 1024*1024*1024
-                    ? String.format("%.2f GB", ram / (1024*1024*1024))
-                    : String.format("%.0f MB", ram / (1024*1024));
-
-            return new SimpleStringProperty(formatted);
+        cpuColumn.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Double value, boolean empty) {
+                super.updateItem(value, empty);
+                if (empty || value == null) {
+                    setText(null);
+                } else {
+                    setText(String.format("%.2f ", value) + "%");
+                }
+            }
         });
 
+        ramColumn.setCellValueFactory(cellData ->
+                new SimpleDoubleProperty(cellData.getValue().getRamUsage()).asObject()
+        );
+
+        ramColumn.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(Double value, boolean empty) {
+                super.updateItem(value, empty);
+                if (empty || value == null) {
+                    setText(null);
+                } else {
+                    if (value >= (1024*1024*1024)) {
+                        setText(String.format("%.2f GB", value / (1024*1024*1024)));
+                    } else {
+                        setText(String.format("%.0f MB", value / (1024*1024)));
+                    }
+                }
+            }
+        });
 
         processTable.setItems(processList);
     }
@@ -77,7 +98,21 @@ public class MainController {
                     Collection<ProcessRecord> processes = registry.getAllProcesses();
 
                     Platform.runLater(() -> {
-                        processList.setAll(processes);
+                        // Add/update
+                        for (ProcessRecord newProc : processes) {
+                            int index = processList.indexOf(newProc);
+
+                            if (index < 0) {
+                                processList.add(newProc);
+                            }
+                        }
+
+                        // Remove missing
+                        processList.removeIf(oldProc ->
+                                processes.stream().noneMatch(p -> p.getPid() == oldProc.getPid())
+                        );
+
+                        processTable.refresh();
                     });
                 }
 

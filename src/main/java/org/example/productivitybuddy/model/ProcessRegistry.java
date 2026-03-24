@@ -26,6 +26,7 @@ public class ProcessRegistry {
             oldP.setTotalTimeMilliseconds(oldP.getTotalTimeMilliseconds() + System.currentTimeMillis() - prevTimestamp);
             oldP.setLastSeenTimestamp(System.currentTimeMillis());
             oldP.setPreviousTotalCpuTicks(newP.getTotalTicks());
+            oldP.setRamUsage(newP.getRamUsage());
 
             return oldP;
         });

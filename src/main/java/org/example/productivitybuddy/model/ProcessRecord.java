@@ -34,6 +34,18 @@ public class ProcessRecord {
         this.previousTotalCpuTicks = new AtomicLong(0);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof ProcessRecord that)) return false;
+        return this.pid == that.pid;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(pid);
+    }
+
     public int getPid() {
         return pid;
     }
@@ -88,6 +100,10 @@ public class ProcessRecord {
 
     public String getOriginalName() {
         return originalName;
+    }
+
+    public void setRamUsage(long ramUsage) {
+        this.ramUsage = ramUsage;
     }
 }
 
