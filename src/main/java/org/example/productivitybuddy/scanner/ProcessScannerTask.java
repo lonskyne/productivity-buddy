@@ -1,6 +1,5 @@
 package org.example.productivitybuddy.scanner;
 
-import org.example.productivitybuddy.model.ProcessCategory;
 import oshi.software.os.OSProcess;
 import org.example.productivitybuddy.model.ProcessRegistry;
 import org.example.productivitybuddy.model.ProcessRecord;

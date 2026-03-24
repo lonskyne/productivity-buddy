@@ -95,9 +95,9 @@ public class MainController {
         Thread uiUpdater = new Thread(() -> {
             while (true) {
                 if (registry != null) {
-                    Collection<ProcessRecord> processes = registry.getAllProcesses();
-
                     Platform.runLater(() -> {
+                        Collection<ProcessRecord> processes = registry.getAllProcesses();
+
                         // Add/update
                         for (ProcessRecord newProc : processes) {
                             int index = processList.indexOf(newProc);

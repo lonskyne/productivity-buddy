@@ -10,23 +10,27 @@ public class ProcessRegistry {
 
     public void updateProcess(ProcessRecord newProcess) {
         processes.merge(newProcess.getPid(), newProcess, (oldP, newP) -> {
-            long prevTicks = oldP.getPreviousTotalCpuTicks();
-            long prevTimestamp = oldP.getLastSeenTimestamp();
+            synchronized (oldP) {
+                long prevTicks = oldP.getPreviousTotalCpuTicks();
+                long prevTimestamp = oldP.getLastSeenTimestamp();
+                long systemTimeMillis = System.currentTimeMillis();
+                double cpuUsage = oldP.getCpuUsage();
 
-            if (prevTicks > 0 && prevTimestamp > 0) {
-                long deltaTicks = newP.getTotalTicks() - prevTicks;
-                long deltaTime = System.currentTimeMillis() - prevTimestamp;
+                if (prevTicks > 0 && prevTimestamp > 0) {
+                    long deltaTicks = newP.getTotalTicks() - prevTicks;
+                    long deltaTime = systemTimeMillis - prevTimestamp;
 
-                if (deltaTime > 0) {
-                    double cpuPercent = (deltaTicks / (double) deltaTime) * 100.0;
-                    oldP.setCpuUsage(cpuPercent);
+                    if (deltaTime > 0) {
+                        cpuUsage = (deltaTicks / (double) deltaTime) * 100.0;
+                    }
                 }
-            }
 
-            oldP.setTotalTimeMilliseconds(oldP.getTotalTimeMilliseconds() + System.currentTimeMillis() - prevTimestamp);
-            oldP.setLastSeenTimestamp(System.currentTimeMillis());
-            oldP.setPreviousTotalCpuTicks(newP.getTotalTicks());
-            oldP.setRamUsage(newP.getRamUsage());
+                oldP.setTotalTimeMilliseconds(oldP.getTotalTimeMilliseconds() + systemTimeMillis - prevTimestamp);
+                oldP.setLastSeenTimestamp(systemTimeMillis);
+                oldP.setPreviousTotalCpuTicks(newP.getTotalTicks());
+                oldP.setRamUsage(newP.getRamUsage());
+                oldP.setCpuUsage(cpuUsage);
+            }
 
             return oldP;
         });
