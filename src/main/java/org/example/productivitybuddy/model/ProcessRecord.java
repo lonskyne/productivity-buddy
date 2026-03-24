@@ -7,44 +7,39 @@ public class ProcessRecord {
     private final int pid;
     private final String originalName;
     private final String aliasName;
+
     private volatile ProcessCategory category;
+
+    private volatile double cpuUsage;
+    private volatile long ramUsage;
+    private final AtomicLong previousTotalCpuTicks;
+
     private AtomicBoolean isTrackingFrozen;
     private AtomicLong totalTimeMilliseconds;
 
     private AtomicLong lastSeenTimestamp;
+    private AtomicLong totalTicks;
 
-    public ProcessRecord(int pid, String originalName) {
+    public ProcessRecord(int pid, String originalName, long ramUsage, long totalTicks) {
         this.pid = pid;
         this.originalName = originalName;
+        this.ramUsage = ramUsage;
+        this.totalTicks = new AtomicLong(totalTicks);
+
         this.aliasName = "";
         this.totalTimeMilliseconds = new AtomicLong(0);
         this.category = ProcessCategory.OTHER;
         this.isTrackingFrozen = new AtomicBoolean(false);
-        lastSeenTimestamp = new AtomicLong(System.currentTimeMillis());
+        this.lastSeenTimestamp = new AtomicLong(System.currentTimeMillis());
+        this.previousTotalCpuTicks = new AtomicLong(0);
     }
 
     public int getPid() {
         return pid;
     }
 
-    public String getOriginalName() {
-        return originalName;
-    }
-
-    public String getAliasName() {
-        return aliasName;
-    }
-
-    public ProcessCategory getCategory() {
-        return category;
-    }
-
     public boolean isTrackingFrozen() {
         return isTrackingFrozen.get();
-    }
-
-    public void setTrackingFrozen(boolean trackingFrozen) {
-        isTrackingFrozen.set(trackingFrozen);
     }
 
     public long getTotalTimeMilliseconds() {
@@ -61,6 +56,38 @@ public class ProcessRecord {
 
     public void setLastSeenTimestamp(long lastSeenTimestamp) {
         this.lastSeenTimestamp.set(lastSeenTimestamp);
+    }
+
+    public void setPreviousTotalCpuTicks(long ticks) {
+        previousTotalCpuTicks.set(ticks);
+    }
+
+    public long getPreviousTotalCpuTicks() {
+        return previousTotalCpuTicks.get();
+    }
+
+    public double getCpuUsage() {
+        return cpuUsage;
+    }
+
+    public void setCpuUsage(double cpuUsage) {
+        this.cpuUsage = cpuUsage;
+    }
+
+    public long getTotalTicks() {
+        return totalTicks.get();
+    }
+
+    public ProcessCategory getCategory() {
+        return category;
+    }
+
+    public long getRamUsage() {
+        return ramUsage;
+    }
+
+    public String getOriginalName() {
+        return originalName;
     }
 }
 
