@@ -67,7 +67,6 @@ public class MainApp extends Application {
 
     @Override
     public void stop() throws Exception {
-        // Shutdown the scheduler first
         if (scheduler != null && !scheduler.isShutdown()) {
             scheduler.shutdown();
             try {
@@ -80,7 +79,6 @@ public class MainApp extends Application {
             }
         }
 
-        // Shutdown the ForkJoinPool – optional but good practice
         if (forkJoinPool != null && !forkJoinPool.isShutdown()) {
             forkJoinPool.shutdown();
             try {
