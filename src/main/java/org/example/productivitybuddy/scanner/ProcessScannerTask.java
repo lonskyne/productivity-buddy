@@ -21,9 +21,7 @@ public class ProcessScannerTask extends RecursiveAction {
     protected void compute() {
         if (processes.size() <= THRESHOLD) {
             for (OSProcess osProcess : processes) {
-                long userTicks = osProcess.getUserTime();
-                long kernelTicks = osProcess.getKernelTime();
-                long totalTicks = userTicks + kernelTicks;
+                long totalTicks = osProcess.getUserTime() + osProcess.getKernelTime();
 
                 ProcessRecord record = new ProcessRecord(
                         osProcess.getProcessID(),

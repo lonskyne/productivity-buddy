@@ -28,7 +28,7 @@ public class ProcessRecord {
 
         this.aliasName = "";
         this.totalTimeMilliseconds = new AtomicLong(0);
-        this.category = ProcessCategory.OTHER;
+        this.category = ProcessCategory.UNCATEGORIZED;
         this.isTrackingFrozen = new AtomicBoolean(false);
         this.lastSeenTimestamp = new AtomicLong(System.currentTimeMillis());
         this.previousTotalCpuTicks = new AtomicLong(0);
@@ -105,5 +105,6 @@ public class ProcessRecord {
     public void setRamUsage(long ramUsage) {
         this.ramUsage = ramUsage;
     }
+
 }
 

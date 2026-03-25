@@ -28,7 +28,16 @@
     </center>
 
     <right>
-        <PieChart fx:id="categoryChart"/>
+        <VBox spacing="10">
+            <PieChart fx:id="categoryChart"/>
+
+            <TableView fx:id="categoryTable" prefHeight="200">
+                <columns>
+                    <TableColumn fx:id="categoryNameColumn" text="Category"/>
+                    <TableColumn fx:id="categoryTimeColumn" text="Time"/>
+                </columns>
+            </TableView>
+        </VBox>
     </right>
 
 </BorderPane>

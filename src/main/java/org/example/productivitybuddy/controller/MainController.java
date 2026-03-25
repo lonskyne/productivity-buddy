@@ -3,23 +3,30 @@ package org.example.productivitybuddy.controller;
 import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
-import javafx.collections.transformation.SortedList;
 import javafx.fxml.FXML;
 import javafx.scene.chart.PieChart;
+import javafx.scene.control.Label;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import org.example.productivitybuddy.model.CategoryStats;
+import org.example.productivitybuddy.model.ProcessCategory;
 import org.example.productivitybuddy.model.ProcessRecord;
 import org.example.productivitybuddy.model.ProcessRegistry;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class MainController {
-
+    @FXML public TableView<CategoryStats> categoryTable;
+    @FXML public TableColumn<CategoryStats, String> categoryNameColumn;
+    @FXML public TableColumn<CategoryStats, String> categoryTimeColumn;
 
     @FXML private TableView<ProcessRecord> processTable;
     @FXML private TableColumn<ProcessRecord, Integer> pidColumn;
@@ -32,6 +39,11 @@ public class MainController {
     @FXML private PieChart categoryChart;
 
     private final ObservableList<ProcessRecord> processList = FXCollections.observableArrayList();
+
+    private final Map<ProcessCategory, PieChart.Data> pieMap = new HashMap<>();
+    private final ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
+
+    private final ObservableList<CategoryStats> categoryStatsList = FXCollections.observableArrayList();
 
     private ProcessRegistry registry;
 
@@ -88,16 +100,27 @@ public class MainController {
             }
         });
 
+
+        categoryNameColumn.setCellValueFactory(data ->
+                new ReadOnlyObjectWrapper<>(data.getValue().getCategory().toString())
+        );
+        categoryTimeColumn.setCellValueFactory(data ->
+                new ReadOnlyObjectWrapper<>(data.getValue().getTimeFormatted())
+        );
+
+
         processTable.setItems(processList);
+        categoryChart.setData(pieData);
+        categoryTable.setItems(categoryStatsList);
     }
 
     private void startUIUpdater() {
         Thread uiUpdater = new Thread(() -> {
             while (true) {
                 if (registry != null) {
-                    Platform.runLater(() -> {
-                        Collection<ProcessRecord> processes = registry.getAllProcesses();
+                    Collection<ProcessRecord> processes = registry.getAllProcesses();
 
+                    Platform.runLater(() -> {
                         // Add/update
                         for (ProcessRecord newProc : processes) {
                             int index = processList.indexOf(newProc);
@@ -113,6 +136,7 @@ public class MainController {
                         );
 
                         processTable.refresh();
+                        updatePieChart();
                     });
                 }
 
@@ -125,6 +149,47 @@ public class MainController {
         });
         uiUpdater.setDaemon(true);
         uiUpdater.start();
+    }
+
+    private void updatePieChart() {
+        Map<ProcessCategory, Long> timeByCategory = processList.stream()
+                .collect(Collectors.groupingBy(
+                        ProcessRecord::getCategory,
+                        Collectors.summingLong(ProcessRecord::getTotalTimeMilliseconds)
+                ));
+
+        long totalTime = timeByCategory.values().stream()
+                .mapToLong(Long::longValue)
+                .sum();
+
+        if (totalTime == 0) return;
+
+        categoryStatsList.clear();
+        for (var entry : timeByCategory.entrySet()) {
+            ProcessCategory category = entry.getKey();
+            long categoryTime = entry.getValue();
+
+            PieChart.Data data = pieMap.get(category);
+
+            if (data == null) {
+                data = new PieChart.Data(category.toString(), categoryTime);
+                pieMap.put(category, data);
+                pieData.add(data);
+            } else {
+                data.setPieValue(categoryTime);
+            }
+
+            categoryStatsList.add(new CategoryStats(category, categoryTime));
+        }
+
+        pieMap.keySet().removeIf(category -> {
+            if (!timeByCategory.containsKey(category)) {
+                PieChart.Data data = pieMap.get(category);
+                pieData.remove(data);
+                return true;
+            }
+            return false;
+        });
     }
 
     @FXML
