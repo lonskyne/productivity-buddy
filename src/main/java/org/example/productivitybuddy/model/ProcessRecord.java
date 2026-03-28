@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ProcessRecord {
     private final int pid;
     private final String originalName;
-    private final String aliasName;
+    private volatile String aliasName;
 
     private volatile ProcessCategory category;
 
@@ -26,7 +26,7 @@ public class ProcessRecord {
         this.ramUsage = ramUsage;
         this.totalTicks = new AtomicLong(totalTicks);
 
-        this.aliasName = "";
+        this.aliasName = originalName;
         this.totalTimeMilliseconds = new AtomicLong(0);
         this.category = ProcessCategory.UNCATEGORIZED;
         this.isTrackingFrozen = new AtomicBoolean(false);
@@ -48,10 +48,6 @@ public class ProcessRecord {
 
     public int getPid() {
         return pid;
-    }
-
-    public boolean isTrackingFrozen() {
-        return isTrackingFrozen.get();
     }
 
     public long getTotalTimeMilliseconds() {
@@ -106,5 +102,48 @@ public class ProcessRecord {
         this.ramUsage = ramUsage;
     }
 
+    public void setCategory(ProcessCategory category) {
+        this.category = category;
+    }
+
+    public void setAliasName(String aliasName) {
+        this.aliasName = aliasName;
+    }
+
+    public boolean getIsTrackingFrozen() {
+        return isTrackingFrozen.get();
+    }
+
+    public void toggleIsTrackingFrozen() {
+        boolean currentValue = isTrackingFrozen.get();
+        boolean newValue = !currentValue;
+        // Keep trying until the update is successful
+        while (!isTrackingFrozen.compareAndSet(currentValue, newValue)) {
+            currentValue = isTrackingFrozen.get();
+            newValue = !currentValue;
+        }
+    }
+
+    public String getTimeFormatted() {
+        long totalSeconds = getTotalTimeMilliseconds() / 1000;
+
+        long hours = totalSeconds / 3600;
+        long minutes = (totalSeconds % 3600) / 60;
+        long seconds = totalSeconds % 60;
+
+        if (hours > 0) {
+            return String.format("%dh %2dm %2ds", hours, minutes, seconds);
+        } else
+        if (minutes > 0){
+            return String.format("%dm %2ds", minutes, seconds);
+        }
+        else {
+            return String.format("%2ds", seconds);
+        }
+    }
+
+    public String getAliasName() {
+        return aliasName;
+    }
 }
 

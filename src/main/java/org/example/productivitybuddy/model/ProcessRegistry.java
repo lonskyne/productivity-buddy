@@ -5,31 +5,33 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ProcessRegistry {
-    public final int REFRESH_MILLISECONDS = 5000;
+    public final int REFRESH_MILLISECONDS = 1000;
     private final ConcurrentHashMap<Integer, ProcessRecord> processes = new ConcurrentHashMap<>();
 
     public void updateProcess(ProcessRecord newProcess) {
         processes.merge(newProcess.getPid(), newProcess, (oldP, newP) -> {
             synchronized (oldP) {
-                long prevTicks = oldP.getPreviousTotalCpuTicks();
-                long prevTimestamp = oldP.getLastSeenTimestamp();
-                long systemTimeMillis = System.currentTimeMillis();
-                double cpuUsage = oldP.getCpuUsage();
+                if(!oldP.getIsTrackingFrozen()) {
+                    long prevTicks = oldP.getPreviousTotalCpuTicks();
+                    long prevTimestamp = oldP.getLastSeenTimestamp();
+                    long systemTimeMillis = System.currentTimeMillis();
+                    double cpuUsage = oldP.getCpuUsage();
 
-                if (prevTicks > 0 && prevTimestamp > 0) {
-                    long deltaTicks = newP.getTotalTicks() - prevTicks;
-                    long deltaTime = systemTimeMillis - prevTimestamp;
+                    if (prevTicks > 0 && prevTimestamp > 0) {
+                        long deltaTicks = newP.getTotalTicks() - prevTicks;
+                        long deltaTime = systemTimeMillis - prevTimestamp;
 
-                    if (deltaTime > 0) {
-                        cpuUsage = (deltaTicks / (double) deltaTime) * 100.0;
+                        if (deltaTime > 0) {
+                            cpuUsage = (deltaTicks / (double) deltaTime) * 100.0;
+                        }
                     }
-                }
 
-                oldP.setTotalTimeMilliseconds(oldP.getTotalTimeMilliseconds() + systemTimeMillis - prevTimestamp);
-                oldP.setLastSeenTimestamp(systemTimeMillis);
-                oldP.setPreviousTotalCpuTicks(newP.getTotalTicks());
-                oldP.setRamUsage(newP.getRamUsage());
-                oldP.setCpuUsage(cpuUsage);
+                    oldP.setTotalTimeMilliseconds(oldP.getTotalTimeMilliseconds() + REFRESH_MILLISECONDS);
+                    oldP.setLastSeenTimestamp(systemTimeMillis);
+                    oldP.setPreviousTotalCpuTicks(newP.getTotalTicks());
+                    oldP.setRamUsage(newP.getRamUsage());
+                    oldP.setCpuUsage(cpuUsage);
+                }
             }
 
             return oldP;
@@ -50,5 +52,22 @@ public class ProcessRegistry {
 
     public void retainOnly(Set<Integer> pids) {
         processes.keySet().retainAll(pids);
+    }
+
+    public void killProcess(ProcessRecord process) {
+        ProcessHandle.of(process.getPid()).ifPresent(ProcessHandle::destroy);
+    }
+
+    public void renameProcess(ProcessRecord process, String newName) {
+        process.setAliasName(newName);
+    }
+
+    public void toggleFreezeProcess(ProcessRecord process) {
+        process.toggleIsTrackingFrozen();
+        System.out.println(process.getIsTrackingFrozen());
+    }
+
+    public void changeProcessCategory(ProcessRecord process, ProcessCategory newCategory) {
+        process.setCategory(newCategory);
     }
 }

@@ -15,7 +15,7 @@
 
 
     <center>
-        <SplitPane dividerPositions="0.7"
+        <SplitPane dividerPositions="0.5"
                    xmlns:fx="http://javafx.com/fxml">
         <TableView fx:id="processTable">
             <columns>

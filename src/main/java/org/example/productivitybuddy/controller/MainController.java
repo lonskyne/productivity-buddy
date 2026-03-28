@@ -65,7 +65,7 @@ public class MainController {
         this.pieView = rightPane.getChildren().getFirst();
 
         pidColumn.setCellValueFactory(new PropertyValueFactory<>("pid"));
-        nameColumn.setCellValueFactory(new PropertyValueFactory<>("originalName"));
+        nameColumn.setCellValueFactory(new PropertyValueFactory<>("aliasName"));
         categoryColumn.setCellValueFactory(new PropertyValueFactory<>("category"));
 
         totalTimeColumn.setCellValueFactory(cellData -> {
@@ -229,7 +229,7 @@ public class MainController {
             Parent detailRoot = loader.load();
 
             detailController = loader.getController();
-            detailController.setProcess(process, registry.getAllProcesses());
+            detailController.setProcess(process, registry);
             detailController.setOnBack(() -> {
                 detailController = null;
                 rightPane.getChildren().setAll(pieView);

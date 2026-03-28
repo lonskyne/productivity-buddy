@@ -56,7 +56,7 @@
 
         <Button text="Kill Process" onAction="#onKill"/>
         <Button text="Change Name" onAction="#onRename"/>
-        <Button text="Freeze Tracking" onAction="#onFreeze"/>
+        <Button text="Freeze Tracking" fx:id="freezeButton"  onAction="#onFreeze"/>
         <Button text="Change Category" onAction="#onChangeCategory"/>
     </VBox>
 
