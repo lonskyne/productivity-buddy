@@ -4,7 +4,6 @@ import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -13,6 +12,7 @@ import javafx.scene.Parent;
 import javafx.scene.chart.PieChart;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import org.example.productivitybuddy.model.CategoryStats;
 import org.example.productivitybuddy.model.ProcessCategory;
@@ -26,20 +26,21 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class MainController {
+    public final int UI_REFRESH_MILLIS = 500;
+
     @FXML public StackPane rightPane;
+    public BorderPane root;
     private Node pieView;
+    private Node mainView;
 
     @FXML public TableView<CategoryStats> categoryTable;
-    @FXML public TableColumn<CategoryStats, String> categoryNameColumn;
+    @FXML public TableColumn<CategoryStats, ProcessCategory> categoryNameColumn;
     @FXML public TableColumn<CategoryStats, String> categoryTimeColumn;
 
     @FXML private TableView<ProcessRecord> processTable;
     @FXML private TableColumn<ProcessRecord, Integer> pidColumn;
     @FXML private TableColumn<ProcessRecord, String> nameColumn;
-    @FXML private TableColumn<ProcessRecord, Double> cpuColumn;
-    @FXML private TableColumn<ProcessRecord, Double> ramColumn;
-    @FXML private TableColumn<ProcessRecord, String> categoryColumn;
-    @FXML private TableColumn<ProcessRecord, Double> totalTimeColumn;
+    @FXML private TableColumn<ProcessRecord, ProcessCategory> categoryColumn;
 
     @FXML private PieChart categoryChart;
 
@@ -52,7 +53,8 @@ public class MainController {
 
     private ProcessRegistry registry;
 
-    private ProcessDetailController detailController;
+    private ProcessDetailController processDetailController;
+    private CategoryDetailController categoryDetailController;
 
     public void setRegistry(ProcessRegistry registry) {
         this.registry = registry;
@@ -61,68 +63,61 @@ public class MainController {
 
     @FXML
     public void initialize() {
-        this.detailController = null;
+        this.processDetailController = null;
+        this.categoryDetailController = null;
         this.pieView = rightPane.getChildren().getFirst();
+        this.mainView = root.getCenter();
 
         pidColumn.setCellValueFactory(new PropertyValueFactory<>("pid"));
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("aliasName"));
         categoryColumn.setCellValueFactory(new PropertyValueFactory<>("category"));
 
-        totalTimeColumn.setCellValueFactory(cellData -> {
-            long totalMs = cellData.getValue().getTotalTimeMilliseconds();
-            double seconds = totalMs / 1000.0f;
-            return new ReadOnlyObjectWrapper<Double>(seconds);
-        });
 
-        cpuColumn.setCellValueFactory(cellData ->
-                new SimpleDoubleProperty(cellData.getValue().getCpuUsage()).asObject()
-        );
 
-        cpuColumn.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(Double value, boolean empty) {
-                super.updateItem(value, empty);
-                if (empty || value == null) {
-                    setText(null);
-                } else {
-                    setText(String.format("%.2f ", value) + "%");
+        nameColumn.setCellFactory(col -> {
+            TableCell<ProcessRecord, String> cell = new TableCell<>() {
+                @Override
+                protected void updateItem(String item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setText(empty ? null : item);
                 }
-            }
-        });
+            };
 
-        ramColumn.setCellValueFactory(cellData ->
-                new SimpleDoubleProperty(cellData.getValue().getRamUsage()).asObject()
-        );
-
-        ramColumn.setCellFactory(col -> new TableCell<>() {
-            @Override
-            protected void updateItem(Double value, boolean empty) {
-                super.updateItem(value, empty);
-                if (empty || value == null) {
-                    setText(null);
-                } else {
-                    if (value >= (1024*1024*1024)) {
-                        setText(String.format("%.2f GB", value / (1024*1024*1024)));
-                    } else {
-                        setText(String.format("%.0f MB", value / (1024*1024)));
-                    }
-                }
-            }
-        });
-
-        processTable.setRowFactory(tv -> {
-            TableRow<ProcessRecord> row = new TableRow<>();
-            row.setOnMouseClicked(event -> {
-                if (!row.isEmpty() && event.getClickCount() == 2) {
-                    showProcessDetail(row.getItem());
+            cell.setOnMouseClicked(event -> {
+                if (!cell.isEmpty() && event.getClickCount() == 2) {
+                    ProcessRecord process = cell.getTableView()
+                            .getItems()
+                            .get(cell.getIndex());
+                    showProcessDetail(process);
                 }
             });
-            return row;
+
+            return cell;
         });
 
+        categoryColumn.setCellFactory(col -> {
+            TableCell<ProcessRecord, ProcessCategory> cell = new TableCell<>() {
+                @Override
+                protected void updateItem(ProcessCategory item, boolean empty) {
+                    super.updateItem(item, empty);
+                    setText(empty ? null : item.toString());
+                }
+            };
+
+            cell.setOnMouseClicked(event -> {
+                if (!cell.isEmpty() && event.getClickCount() == 2) {
+                    ProcessCategory category = cell.getTableView()
+                            .getItems()
+                            .get(cell.getIndex()).getCategory();
+                    showCategoryDetail(category);
+                }
+            });
+
+            return cell;
+        });
 
         categoryNameColumn.setCellValueFactory(data ->
-                new ReadOnlyObjectWrapper<>(data.getValue().getCategory().toString())
+                new ReadOnlyObjectWrapper<>(data.getValue().getCategory())
         );
         categoryTimeColumn.setCellValueFactory(data ->
                 new ReadOnlyObjectWrapper<>(data.getValue().getTimeFormatted())
@@ -139,19 +134,26 @@ public class MainController {
             while (true) {
                 if (registry != null) {
                     Collection<ProcessRecord> processes = registry.getAllProcesses();
+                    if(categoryDetailController != null) {
+                        categoryDetailController.fetchProcesses();
+                    }
 
                     Platform.runLater(() -> {
                         updateProcessTable(processes);
                         updatePieChart();
 
-                        if(detailController != null) {
-                            detailController.updateDetailView();
+                        if(processDetailController != null) {
+                            processDetailController.updateDetailView();
+                        }
+
+                        if(categoryDetailController != null) {
+                            categoryDetailController.updateDetailView();
                         }
                     });
                 }
 
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep(UI_REFRESH_MILLIS);
                 } catch (InterruptedException e) {
                     break;
                 }
@@ -228,15 +230,34 @@ public class MainController {
 
             Parent detailRoot = loader.load();
 
-            detailController = loader.getController();
-            detailController.setProcess(process, registry);
-            detailController.setOnBack(() -> {
-                detailController = null;
+            processDetailController = loader.getController();
+            processDetailController.setProcess(process, registry);
+            processDetailController.setOnBack(() -> {
+                processDetailController = null;
                 rightPane.getChildren().setAll(pieView);
             });
 
             rightPane.getChildren().setAll(detailRoot);
 
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void showCategoryDetail(ProcessCategory category) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/org/example/productivitybuddy/category_detail-view.fxml"));
+            Parent view = loader.load();
+
+            categoryDetailController = loader.getController();
+            categoryDetailController.initialize(registry, category);
+
+            categoryDetailController.setOnBack(() -> {
+                categoryDetailController = null;
+                root.setCenter(mainView);
+            });
+
+            root.setCenter(view);
         } catch (IOException e) {
             e.printStackTrace();
         }

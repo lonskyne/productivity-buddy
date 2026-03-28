@@ -4,7 +4,7 @@
 <?import javafx.scene.layout.*?>
 
 <?import javafx.scene.chart.PieChart?>
-<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="org.example.productivitybuddy.controller.MainController">
+<BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="org.example.productivitybuddy.controller.MainController" fx:id="root">
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT">
             <Button text="Save" onAction="#onSave"/>
@@ -21,10 +21,7 @@
             <columns>
                 <TableColumn text="PID" fx:id="pidColumn"/>
                 <TableColumn text="Name" fx:id="nameColumn"/>
-                <TableColumn text="CPU %" fx:id="cpuColumn"/>
-                <TableColumn text="RAM" fx:id="ramColumn"/>
                 <TableColumn text="Category" fx:id="categoryColumn"/>
-                <TableColumn text="Total time" fx:id="totalTimeColumn"/>
             </columns>
         </TableView>
 

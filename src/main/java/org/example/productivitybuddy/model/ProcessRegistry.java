@@ -1,6 +1,7 @@
 package org.example.productivitybuddy.model;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -70,4 +71,11 @@ public class ProcessRegistry {
     public void changeProcessCategory(ProcessRecord process, ProcessCategory newCategory) {
         process.setCategory(newCategory);
     }
+
+    public List<ProcessRecord> getProcessesByCategory(ProcessCategory category) {
+        return processes.values().stream()
+                .filter(p -> category.equals(p.getCategory()))
+                .toList();
+    }
+
 }
