@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml"
+      fx:controller="org.example.productivitybuddy.controller.ProcessDetailController"
+      spacing="15">
+
+    <padding>
+        <Insets top="15" right="15" bottom="15" left="15"/>
+    </padding>
+
+    <HBox alignment="CENTER_LEFT" spacing="10">
+        <Button text="← Back" onAction="#onBack"/>
+        <Label text="Process Detail" style="-fx-font-size: 16px; -fx-font-weight: bold;"/>
+    </HBox>
+
+    <Label fx:id="nameLabel"
+           style="-fx-font-size: 20px; -fx-font-weight: bold;"/>
+
+    <HBox spacing="10">
+        <Label text="Total time:"/>
+        <Label fx:id="totalTimeLabel"/>
+    </HBox>
+
+    <VBox spacing="5">
+        <Label text="CPU Usage"/>
+        <HBox spacing="10">
+            <Label text="Usage:"/>
+            <Label fx:id="cpuLabel"/>
+        </HBox>
+        <HBox spacing="10">
+            <Label text="Rank:"/>
+            <Label fx:id="cpuRankLabel"/>
+        </HBox>
+    </VBox>
+
+    <VBox spacing="5">
+        <Label text="RAM Usage"/>
+        <HBox spacing="10">
+            <Label text="Usage:"/>
+            <Label fx:id="ramLabel"/>
+        </HBox>
+        <HBox spacing="10">
+            <Label text="Rank:"/>
+            <Label fx:id="ramRankLabel"/>
+        </HBox>
+    </VBox>
+
+    <VBox spacing="10">
+        <Label text="Actions" style="-fx-font-weight: bold;"/>
+
+        <Button text="Kill Process" onAction="#onKill"/>
+        <Button text="Change Name" onAction="#onRename"/>
+        <Button text="Freeze Tracking" onAction="#onFreeze"/>
+        <Button text="Change Category" onAction="#onChangeCategory"/>
+    </VBox>
+
+</VBox>

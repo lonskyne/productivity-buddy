@@ -7,23 +7,28 @@ import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.chart.PieChart;
-import javafx.scene.control.Label;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.StackPane;
 import org.example.productivitybuddy.model.CategoryStats;
 import org.example.productivitybuddy.model.ProcessCategory;
 import org.example.productivitybuddy.model.ProcessRecord;
 import org.example.productivitybuddy.model.ProcessRegistry;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class MainController {
+    @FXML public StackPane rightPane;
+    private Node pieView;
+
     @FXML public TableView<CategoryStats> categoryTable;
     @FXML public TableColumn<CategoryStats, String> categoryNameColumn;
     @FXML public TableColumn<CategoryStats, String> categoryTimeColumn;
@@ -47,6 +52,8 @@ public class MainController {
 
     private ProcessRegistry registry;
 
+    private ProcessDetailController detailController;
+
     public void setRegistry(ProcessRegistry registry) {
         this.registry = registry;
         startUIUpdater();
@@ -54,6 +61,9 @@ public class MainController {
 
     @FXML
     public void initialize() {
+        this.detailController = null;
+        this.pieView = rightPane.getChildren().getFirst();
+
         pidColumn.setCellValueFactory(new PropertyValueFactory<>("pid"));
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("originalName"));
         categoryColumn.setCellValueFactory(new PropertyValueFactory<>("category"));
@@ -100,6 +110,16 @@ public class MainController {
             }
         });
 
+        processTable.setRowFactory(tv -> {
+            TableRow<ProcessRecord> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (!row.isEmpty() && event.getClickCount() == 2) {
+                    showProcessDetail(row.getItem());
+                }
+            });
+            return row;
+        });
+
 
         categoryNameColumn.setCellValueFactory(data ->
                 new ReadOnlyObjectWrapper<>(data.getValue().getCategory().toString())
@@ -121,22 +141,12 @@ public class MainController {
                     Collection<ProcessRecord> processes = registry.getAllProcesses();
 
                     Platform.runLater(() -> {
-                        // Add/update
-                        for (ProcessRecord newProc : processes) {
-                            int index = processList.indexOf(newProc);
-
-                            if (index < 0) {
-                                processList.add(newProc);
-                            }
-                        }
-
-                        // Remove missing
-                        processList.removeIf(oldProc ->
-                                processes.stream().noneMatch(p -> p.getPid() == oldProc.getPid())
-                        );
-
-                        processTable.refresh();
+                        updateProcessTable(processes);
                         updatePieChart();
+
+                        if(detailController != null) {
+                            detailController.updateDetailView();
+                        }
                     });
                 }
 
@@ -190,6 +200,46 @@ public class MainController {
             }
             return false;
         });
+    }
+
+    private void updateProcessTable(Collection<ProcessRecord> processes) {
+        // Add/update
+        for (ProcessRecord newProc : processes) {
+            int index = processList.indexOf(newProc);
+
+            if (index < 0) {
+                processList.add(newProc);
+            }
+        }
+
+        // Remove missing
+        processList.removeIf(oldProc ->
+                processes.stream().noneMatch(p -> p.getPid() == oldProc.getPid())
+        );
+
+        processTable.refresh();
+    }
+
+    private void showProcessDetail(ProcessRecord process) {
+        try {
+            FXMLLoader loader = new FXMLLoader(
+                    getClass().getResource("/org/example/productivitybuddy/process_detail-view.fxml")
+            );
+
+            Parent detailRoot = loader.load();
+
+            detailController = loader.getController();
+            detailController.setProcess(process, registry.getAllProcesses());
+            detailController.setOnBack(() -> {
+                detailController = null;
+                rightPane.getChildren().setAll(pieView);
+            });
+
+            rightPane.getChildren().setAll(detailRoot);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     @FXML

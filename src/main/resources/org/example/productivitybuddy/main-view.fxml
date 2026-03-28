@@ -5,7 +5,6 @@
 
 <?import javafx.scene.chart.PieChart?>
 <BorderPane xmlns:fx="http://javafx.com/fxml" fx:controller="org.example.productivitybuddy.controller.MainController">
-
     <top>
         <HBox spacing="10" alignment="CENTER_LEFT">
             <Button text="Save" onAction="#onSave"/>
@@ -14,7 +13,10 @@
         </HBox>
     </top>
 
+
     <center>
+        <SplitPane dividerPositions="0.7"
+                   xmlns:fx="http://javafx.com/fxml">
         <TableView fx:id="processTable">
             <columns>
                 <TableColumn text="PID" fx:id="pidColumn"/>
@@ -25,19 +27,20 @@
                 <TableColumn text="Total time" fx:id="totalTimeColumn"/>
             </columns>
         </TableView>
+
+        <StackPane fx:id="rightPane">
+            <VBox spacing="10">
+                <PieChart fx:id="categoryChart"/>
+
+                <TableView fx:id="categoryTable" prefHeight="200">
+                    <columns>
+                        <TableColumn fx:id="categoryNameColumn" text="Category"/>
+                        <TableColumn fx:id="categoryTimeColumn" text="Time"/>
+                    </columns>
+                </TableView>
+            </VBox>
+        </StackPane>
+        </SplitPane>
     </center>
-
-    <right>
-        <VBox spacing="10">
-            <PieChart fx:id="categoryChart"/>
-
-            <TableView fx:id="categoryTable" prefHeight="200">
-                <columns>
-                    <TableColumn fx:id="categoryNameColumn" text="Category"/>
-                    <TableColumn fx:id="categoryTimeColumn" text="Time"/>
-                </columns>
-            </TableView>
-        </VBox>
-    </right>
 
 </BorderPane>
