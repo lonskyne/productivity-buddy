@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ProcessRegistry {
     public final int REFRESH_MILLISECONDS = 1000;
     private final ConcurrentHashMap<Integer, ProcessRecord> processes = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Object> nameLocks = new ConcurrentHashMap<>();
 
     public void updateProcess(ProcessRecord newProcess) {
         processes.merge(newProcess.getPid(), newProcess, (oldP, newP) -> {
@@ -60,22 +61,61 @@ public class ProcessRegistry {
     }
 
     public void renameProcess(ProcessRecord process, String newName) {
-        process.setAliasName(newName);
+        String oldName = process.getAliasName();
+
+        Object lock = getLockForName(oldName);
+
+        synchronized (lock) {
+            for (ProcessRecord p : processes.values()) {
+                if (oldName.equals(p.getAliasName())) {
+                    synchronized (p) {
+                        p.setAliasName(newName);
+                    }
+                }
+            }
+        }
     }
 
     public void toggleFreezeProcess(ProcessRecord process) {
-        process.toggleIsTrackingFrozen();
-        System.out.println(process.getIsTrackingFrozen());
+        String name = process.getAliasName();
+
+        Object lock = getLockForName(name);
+
+        synchronized (lock) {
+            for (ProcessRecord p : processes.values()) {
+                if (name.equals(p.getAliasName())) {
+                    synchronized (p) {
+                        p.toggleIsTrackingFrozen();
+                    }
+                }
+            }
+        }
     }
 
     public void changeProcessCategory(ProcessRecord process, ProcessCategory newCategory) {
-        process.setCategory(newCategory);
+        String name = process.getAliasName();
+
+        Object lock = getLockForName(name);
+
+        synchronized (lock) {
+            for (ProcessRecord p : processes.values()) {
+                if (name.equals(p.getAliasName())) {
+                    synchronized (p) {
+                        p.setCategory(newCategory);
+                    }
+                }
+            }
+        }
     }
 
     public List<ProcessRecord> getProcessesByCategory(ProcessCategory category) {
         return processes.values().stream()
                 .filter(p -> category.equals(p.getCategory()))
                 .toList();
+    }
+
+    private Object getLockForName(String name) {
+        return nameLocks.computeIfAbsent(name, k -> new Object());
     }
 
 }

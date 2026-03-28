@@ -164,7 +164,14 @@ public class MainController {
     }
 
     private void updatePieChart() {
-        Map<ProcessCategory, Long> timeByCategory = processList.stream()
+        Map<String, ProcessRecord> uniqueByName = processList.stream()
+                .collect(Collectors.toMap(
+                        ProcessRecord::getOriginalName,
+                        p -> p,
+                        (p1, p2) -> p1 // keep any one
+                ));
+
+        Map<ProcessCategory, Long> timeByCategory = uniqueByName.values().stream()
                 .collect(Collectors.groupingBy(
                         ProcessRecord::getCategory,
                         Collectors.summingLong(ProcessRecord::getTotalTimeMilliseconds)
@@ -177,6 +184,7 @@ public class MainController {
         if (totalTime == 0) return;
 
         categoryStatsList.clear();
+
         for (var entry : timeByCategory.entrySet()) {
             ProcessCategory category = entry.getKey();
             long categoryTime = entry.getValue();

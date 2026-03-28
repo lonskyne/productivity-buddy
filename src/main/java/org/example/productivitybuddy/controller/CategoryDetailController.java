@@ -17,6 +17,7 @@ import org.example.productivitybuddy.model.ProcessRegistry;
 import org.example.productivitybuddy.util.TimeFormatter;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class CategoryDetailController {
 
@@ -33,7 +34,7 @@ public class CategoryDetailController {
     private ProcessCategory category;
     List<ProcessRecord> processes;
 
-    private final Map<ProcessRecord, PieChart.Data> pieMap = new HashMap<>();
+    private final Map<String, PieChart.Data> pieMap = new HashMap<>();
     private final ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
     private final ObservableList<ProcessRecord> processList = FXCollections.observableArrayList();
 
@@ -106,30 +107,39 @@ public class CategoryDetailController {
     }
 
     private void updatePieChart(List<ProcessRecord> processes) {
-        List<ProcessRecord> top10 = processes.stream()
+        Map<String, ProcessRecord> uniqueByName = new HashMap<>();
+
+        for (ProcessRecord p : processes) {
+            uniqueByName.putIfAbsent(p.getOriginalName(), p);
+        }
+
+        List<ProcessRecord> top10 = uniqueByName.values().stream()
                 .sorted(Comparator.comparingLong(ProcessRecord::getTotalTimeMilliseconds).reversed())
                 .limit(10)
                 .toList();
 
-        Set<ProcessRecord> currentSet = new HashSet<>(top10);
+        Set<String> currentSet = top10.stream()
+                .map(ProcessRecord::getOriginalName)
+                .collect(Collectors.toSet());
 
         for (ProcessRecord p : top10) {
+            String name = p.getOriginalName();
             long time = p.getTotalTimeMilliseconds();
 
-            PieChart.Data data = pieMap.get(p);
+            PieChart.Data data = pieMap.get(name);
 
             if (data == null) {
-                data = new PieChart.Data(p.getAliasName(), time);
-                pieMap.put(p, data);
+                data = new PieChart.Data(name, time);
+                pieMap.put(name, data);
                 pieData.add(data);
             } else {
                 data.setPieValue(time);
             }
         }
 
-        pieMap.keySet().removeIf(p -> {
-            if (!currentSet.contains(p)) {
-                PieChart.Data data = pieMap.get(p);
+        pieMap.keySet().removeIf(name -> {
+            if (!currentSet.contains(name)) {
+                PieChart.Data data = pieMap.get(name);
                 pieData.remove(data);
                 return true;
             }
@@ -156,7 +166,14 @@ public class CategoryDetailController {
     }
 
     private void updateSummary(List<ProcessRecord> processes) {
-        long total = processes.stream()
+
+        Map<String, ProcessRecord> uniqueByName = new HashMap<>();
+
+        for (ProcessRecord p : processes) {
+            uniqueByName.putIfAbsent(p.getOriginalName(), p);
+        }
+
+        long total = uniqueByName.values().stream()
                 .mapToLong(ProcessRecord::getTotalTimeMilliseconds)
                 .sum();
 
