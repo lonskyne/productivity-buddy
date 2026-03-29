@@ -5,6 +5,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import org.example.productivitybuddy.analytics.AnalyticsService;
 import org.example.productivitybuddy.controller.MainController;
 import org.example.productivitybuddy.model.ProcessRegistry;
 import org.example.productivitybuddy.scanner.ScheduledScanner;
@@ -17,11 +18,15 @@ import java.util.concurrent.TimeUnit;
 public class MainApp extends Application {
 
     private final ProcessRegistry registry = new ProcessRegistry();
+    private final AnalyticsService analyticsService = new AnalyticsService(registry);
     private ScheduledExecutorService scheduler;
     private ForkJoinPool forkJoinPool;   // managed here
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        forkJoinPool = new ForkJoinPool();
+        startScheduledScanner();
+        analyticsService.start();
 
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/org/example/productivitybuddy/main-view.fxml")
@@ -41,10 +46,7 @@ public class MainApp extends Application {
         //--------------------------------------------------
 
         MainController controller = loader.getController();
-        controller.setRegistry(registry);
-
-        forkJoinPool = new ForkJoinPool();
-        startScheduledScanner();
+        controller.setAnalyticsServiceAndRegistry(analyticsService, registry);
     }
 
     private void startScheduledScanner() {

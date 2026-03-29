@@ -14,6 +14,7 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
+import org.example.productivitybuddy.analytics.AnalyticsService;
 import org.example.productivitybuddy.model.CategoryStats;
 import org.example.productivitybuddy.model.ProcessCategory;
 import org.example.productivitybuddy.model.ProcessRecord;
@@ -51,12 +52,14 @@ public class MainController {
 
     private final ObservableList<CategoryStats> categoryStatsList = FXCollections.observableArrayList();
 
+    private AnalyticsService analyticsService;
     private ProcessRegistry registry;
 
     private ProcessDetailController processDetailController;
     private CategoryDetailController categoryDetailController;
 
-    public void setRegistry(ProcessRegistry registry) {
+    public void setAnalyticsServiceAndRegistry(AnalyticsService analyticsService, ProcessRegistry registry) {
+        this.analyticsService = analyticsService;
         this.registry = registry;
         startUIUpdater();
     }
@@ -132,14 +135,13 @@ public class MainController {
     private void startUIUpdater() {
         Thread uiUpdater = new Thread(() -> {
             while (true) {
-                if (registry != null) {
-                    Collection<ProcessRecord> processes = registry.getAllProcesses();
+                if (analyticsService != null) {
                     if(categoryDetailController != null) {
                         categoryDetailController.fetchProcesses();
                     }
 
                     Platform.runLater(() -> {
-                        updateProcessTable(processes);
+                        updateProcessTable(analyticsService.getSnapshot().getAllProcesses());
                         updatePieChart();
 
                         if(processDetailController != null) {
@@ -164,26 +166,13 @@ public class MainController {
     }
 
     private void updatePieChart() {
-        Map<String, ProcessRecord> uniqueByName = processList.stream()
-                .collect(Collectors.toMap(
-                        ProcessRecord::getOriginalName,
-                        p -> p,
-                        (p1, p2) -> p1 // keep any one
-                ));
-
-        Map<ProcessCategory, Long> timeByCategory = uniqueByName.values().stream()
-                .collect(Collectors.groupingBy(
-                        ProcessRecord::getCategory,
-                        Collectors.summingLong(ProcessRecord::getTotalTimeMilliseconds)
-                ));
-
-        long totalTime = timeByCategory.values().stream()
-                .mapToLong(Long::longValue)
-                .sum();
+        long totalTime = analyticsService.getSnapshot().getTotalTime();
 
         if (totalTime == 0) return;
 
         categoryStatsList.clear();
+
+        Map<ProcessCategory, Long> timeByCategory = analyticsService.getSnapshot().getTimeByCategory();
 
         for (var entry : timeByCategory.entrySet()) {
             ProcessCategory category = entry.getKey();
@@ -239,7 +228,7 @@ public class MainController {
             Parent detailRoot = loader.load();
 
             processDetailController = loader.getController();
-            processDetailController.setProcess(process, registry);
+            processDetailController.setProcess(process, registry, analyticsService);
             processDetailController.setOnBack(() -> {
                 processDetailController = null;
                 rightPane.getChildren().setAll(pieView);
@@ -258,7 +247,7 @@ public class MainController {
             Parent view = loader.load();
 
             categoryDetailController = loader.getController();
-            categoryDetailController.initialize(registry, category);
+            categoryDetailController.initialize(analyticsService, category);
 
             categoryDetailController.setOnBack(() -> {
                 categoryDetailController = null;

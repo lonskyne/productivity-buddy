@@ -29,6 +29,16 @@ public class ProcessScannerTask extends RecursiveAction {
                         osProcess.getResidentSetSize(),
                         totalTicks
                 );
+
+                ProcessRecord existing = registry.findAnyByOriginalName(record.getOriginalName());
+
+                if (existing != null) {
+                    record.setCategory(existing.getCategory());
+                    record.setAliasName(existing.getAliasName());
+                    record.setIsTrackingFrozen(existing.getIsTrackingFrozen());
+                    record.setTotalTimeMilliseconds(existing.getTotalTimeMilliseconds());
+                }
+
                 registry.updateProcess(record);
             }
         } else {

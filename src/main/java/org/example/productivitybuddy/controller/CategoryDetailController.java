@@ -11,9 +11,9 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
+import org.example.productivitybuddy.analytics.AnalyticsService;
 import org.example.productivitybuddy.model.ProcessCategory;
 import org.example.productivitybuddy.model.ProcessRecord;
-import org.example.productivitybuddy.model.ProcessRegistry;
 import org.example.productivitybuddy.util.TimeFormatter;
 
 import java.util.*;
@@ -30,9 +30,9 @@ public class CategoryDetailController {
     @FXML private TableView<ProcessRecord> processTable;
     @FXML private PieChart pieChart;
 
-    private ProcessRegistry registry;
+    private AnalyticsService analyticsService;
     private ProcessCategory category;
-    List<ProcessRecord> processes;
+    private List<ProcessRecord> processes;
 
     private final Map<String, PieChart.Data> pieMap = new HashMap<>();
     private final ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
@@ -40,8 +40,8 @@ public class CategoryDetailController {
 
     private Runnable onBack;
 
-    public void initialize(ProcessRegistry registry, ProcessCategory category) {
-        this.registry = registry;
+    public void initialize(AnalyticsService analyticsService, ProcessCategory category) {
+        this.analyticsService = analyticsService;
         this.category = category;
 
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("aliasName"));
@@ -97,26 +97,17 @@ public class CategoryDetailController {
     }
 
     public void fetchProcesses() {
-        this.processes = registry.getProcessesByCategory(category);
+        this.processes = analyticsService.getSnapshot().getProcessesByCategory(category);
     }
 
     public void updateDetailView() {
         updateProcessTable(processes);
-        updatePieChart(processes);
+        updatePieChart();
         updateSummary(processes);
     }
 
-    private void updatePieChart(List<ProcessRecord> processes) {
-        Map<String, ProcessRecord> uniqueByName = new HashMap<>();
-
-        for (ProcessRecord p : processes) {
-            uniqueByName.putIfAbsent(p.getOriginalName(), p);
-        }
-
-        List<ProcessRecord> top10 = uniqueByName.values().stream()
-                .sorted(Comparator.comparingLong(ProcessRecord::getTotalTimeMilliseconds).reversed())
-                .limit(10)
-                .toList();
+    private void updatePieChart() {
+        List<ProcessRecord> top10 = analyticsService.getSnapshot().getTop10ByCategory(category);
 
         Set<String> currentSet = top10.stream()
                 .map(ProcessRecord::getOriginalName)
@@ -166,16 +157,7 @@ public class CategoryDetailController {
     }
 
     private void updateSummary(List<ProcessRecord> processes) {
-
-        Map<String, ProcessRecord> uniqueByName = new HashMap<>();
-
-        for (ProcessRecord p : processes) {
-            uniqueByName.putIfAbsent(p.getOriginalName(), p);
-        }
-
-        long total = uniqueByName.values().stream()
-                .mapToLong(ProcessRecord::getTotalTimeMilliseconds)
-                .sum();
+        long total = analyticsService.getSnapshot().getTotalTimeByCategory(category);
 
         categorySummary.setText(category + " total time - " + TimeFormatter.formatTime(total));
     }

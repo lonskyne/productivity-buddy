@@ -40,6 +40,13 @@ public class ProcessRegistry {
         });
     }
 
+    public ProcessRecord findAnyByOriginalName(String originalName) {
+        return processes.values().stream()
+                .filter(p -> originalName.equals(p.getOriginalName()))
+                .findAny()
+                .orElse(null);
+    }
+
     public ProcessRecord getProcess(int pid) {
         return processes.get(pid);
     }

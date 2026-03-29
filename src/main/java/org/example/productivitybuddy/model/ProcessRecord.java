@@ -126,6 +126,10 @@ public class ProcessRecord {
         }
     }
 
+    public void setIsTrackingFrozen(boolean isTrackingFrozen) {
+        this.isTrackingFrozen.set(isTrackingFrozen);
+    }
+
     public String getTimeFormatted() {
         return TimeFormatter.formatTime(getTotalTimeMilliseconds());
     }

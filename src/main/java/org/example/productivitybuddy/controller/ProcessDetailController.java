@@ -6,6 +6,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextInputDialog;
+import org.example.productivitybuddy.analytics.AnalyticsService;
 import org.example.productivitybuddy.model.ProcessCategory;
 import org.example.productivitybuddy.model.ProcessRecord;
 import org.example.productivitybuddy.model.ProcessRegistry;
@@ -28,28 +29,14 @@ public class ProcessDetailController {
     private ProcessRecord process;
     private Collection<ProcessRecord> allProcesses;
     private Runnable onBack;
+    private AnalyticsService analyticsService;
     private ProcessRegistry registry;
 
-    public void setProcess(ProcessRecord process, ProcessRegistry registry) {
+    public void setProcess(ProcessRecord process, ProcessRegistry registry, AnalyticsService analyticsService) {
         this.process = process;
+        this.analyticsService = analyticsService;
         this.registry = registry;
-        this.allProcesses = registry.getAllProcesses();
-    }
-
-    private int getRank(Collection<ProcessRecord> all,
-                        ProcessRecord target,
-                        Comparator<ProcessRecord> comparator) {
-
-        List<ProcessRecord> sorted = all.stream()
-                .sorted(comparator)
-                .toList();
-
-        for (int i = 0; i < sorted.size(); i++) {
-            if (sorted.get(i).getPid() == target.getPid()) {
-                return i + 1;
-            }
-        }
-        return -1;
+        this.allProcesses = analyticsService.getSnapshot().getAllProcesses();
     }
 
 
@@ -64,8 +51,8 @@ public class ProcessDetailController {
         ramLabel.setText(String.format("%.0f MB", ramMB));
 
         // Rankings
-        int cpuRank = getRank(allProcesses, process, Comparator.comparingDouble(ProcessRecord::getCpuUsage).reversed());
-        int ramRank = getRank(allProcesses, process, Comparator.comparingDouble(ProcessRecord::getRamUsage).reversed());
+        int cpuRank = analyticsService.getSnapshot().getCpuRankByPid(process.getPid());
+        int ramRank = analyticsService.getSnapshot().getRamRankByPid(process.getPid());
 
         cpuRankLabel.setText(formatRank(cpuRank));
         ramRankLabel.setText(formatRank(ramRank));
