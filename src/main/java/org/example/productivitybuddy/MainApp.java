@@ -5,10 +5,11 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import org.example.productivitybuddy.analytics.AnalyticsService;
+import org.example.productivitybuddy.services.AnalyticsService;
 import org.example.productivitybuddy.controller.MainController;
 import org.example.productivitybuddy.model.ProcessRegistry;
 import org.example.productivitybuddy.scanner.ScheduledScanner;
+import org.example.productivitybuddy.services.FileService;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
@@ -19,14 +20,15 @@ public class MainApp extends Application {
 
     private final ProcessRegistry registry = new ProcessRegistry();
     private final AnalyticsService analyticsService = new AnalyticsService(registry);
+    private final FileService fileService = new FileService(analyticsService);
     private ScheduledExecutorService scheduler;
-    private ForkJoinPool forkJoinPool;   // managed here
+    private final ForkJoinPool forkJoinPool = new ForkJoinPool();
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        forkJoinPool = new ForkJoinPool();
         startScheduledScanner();
         analyticsService.start();
+        fileService.startSnapshots(registry::getAllProcesses);
 
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/org/example/productivitybuddy/main-view.fxml")
@@ -92,6 +94,9 @@ public class MainApp extends Application {
                 Thread.currentThread().interrupt();
             }
         }
+
+        analyticsService.stop();
+        fileService.shutdown();
 
         super.stop();
     }

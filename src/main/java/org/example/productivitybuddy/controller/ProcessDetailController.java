@@ -1,19 +1,15 @@
 package org.example.productivitybuddy.controller;
 
-import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextInputDialog;
-import org.example.productivitybuddy.analytics.AnalyticsService;
+import org.example.productivitybuddy.services.AnalyticsService;
 import org.example.productivitybuddy.model.ProcessCategory;
 import org.example.productivitybuddy.model.ProcessRecord;
 import org.example.productivitybuddy.model.ProcessRegistry;
 
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
 
 public class ProcessDetailController {
@@ -27,7 +23,6 @@ public class ProcessDetailController {
     @FXML private Label ramRankLabel;
 
     private ProcessRecord process;
-    private Collection<ProcessRecord> allProcesses;
     private Runnable onBack;
     private AnalyticsService analyticsService;
     private ProcessRegistry registry;
@@ -36,7 +31,6 @@ public class ProcessDetailController {
         this.process = process;
         this.analyticsService = analyticsService;
         this.registry = registry;
-        this.allProcesses = analyticsService.getSnapshot().getAllProcesses();
     }
 
 

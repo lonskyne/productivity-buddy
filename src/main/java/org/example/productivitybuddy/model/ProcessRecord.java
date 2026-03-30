@@ -16,11 +16,11 @@ public class ProcessRecord {
     private volatile long ramUsage;
     private final AtomicLong previousTotalCpuTicks;
 
-    private AtomicBoolean isTrackingFrozen;
-    private AtomicLong totalTimeMilliseconds;
+    private final AtomicBoolean isTrackingFrozen;
+    private final AtomicLong totalTimeMilliseconds;
 
-    private AtomicLong lastSeenTimestamp;
-    private AtomicLong totalTicks;
+    private final AtomicLong lastSeenTimestamp;
+    private final AtomicLong totalTicks;
 
     public ProcessRecord(int pid, String originalName, long ramUsage, long totalTicks) {
         this.pid = pid;

@@ -1,4 +1,4 @@
-package org.example.productivitybuddy.analytics;
+package org.example.productivitybuddy.services;
 
 import org.example.productivitybuddy.model.AnalyticsSnapshot;
 import org.example.productivitybuddy.model.ProcessCategory;
@@ -52,7 +52,6 @@ public class AnalyticsService {
     }
 
     private void recompute() {
-
         List<ProcessRecord> processList = List.copyOf(registry.getAllProcesses());
 
         Map<String, ProcessRecord> uniqueByName = processList.stream()
