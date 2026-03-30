@@ -1,11 +1,10 @@
 package org.example.productivitybuddy.services;
 
-import org.example.productivitybuddy.model.AnalyticsSnapshot;
-import org.example.productivitybuddy.model.ProcessCategory;
-import org.example.productivitybuddy.model.ProcessRecord;
-import org.example.productivitybuddy.model.ProcessRegistry;
+import org.example.productivitybuddy.model.*;
 
+import java.time.LocalTime;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 public class AnalyticsService {
@@ -17,6 +16,8 @@ public class AnalyticsService {
 
     private Thread worker;
     private volatile boolean running = false;
+
+    private final List<SnapshotListener> listeners = new CopyOnWriteArrayList<>();
 
     public AnalyticsService(ProcessRegistry registry) {
         this.registry = registry;
@@ -31,6 +32,7 @@ public class AnalyticsService {
             while (running) {
                 try {
                     recompute();
+                    checkSnapshotTime();
                     Thread.sleep(REFRESH_MILLISECONDS);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -45,6 +47,29 @@ public class AnalyticsService {
     public void stop() {
         running = false;
         if (worker != null) worker.interrupt();
+    }
+
+    private LocalTime lastTriggered = null;
+
+    private void checkSnapshotTime() {
+        LocalTime now = LocalTime.now().withNano(0);
+
+        if (MyConfig.SNAPSHOT_FIXED_TIMES.contains(now) && !now.equals(lastTriggered)) {
+            lastTriggered = now;
+            triggerSnapshot(now);
+        }
+    }
+
+    private void triggerSnapshot(LocalTime time) {
+        AnalyticsSnapshot current = snapshot;
+
+        for (SnapshotListener listener : listeners) {
+            listener.onSnapshot(current, time);
+        }
+    }
+
+    public void addSnapshotListener(SnapshotListener listener) {
+        listeners.add(listener);
     }
 
     public AnalyticsSnapshot getSnapshot() {

@@ -1,17 +1,18 @@
 package org.example.productivitybuddy.services;
 
-import org.example.productivitybuddy.model.ProcessRecord;
+import org.example.productivitybuddy.model.AnalyticsSnapshot;
+import org.example.productivitybuddy.model.MyConfig;
 
 import java.nio.file.Path;
-import java.util.Collection;
+import java.time.LocalTime;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
+import java.util.concurrent.atomic.AtomicLong;
 
-public class FileService {
-    private final int SNAPSHOT_SECONDS = 10;
+
+public class FileService implements SnapshotListener {
     private final ExecutorService executor;
     private final ScheduledExecutorService scheduler;
     private final AnalyticsService analyticsService;
@@ -20,6 +21,11 @@ public class FileService {
         this.analyticsService = analyticsService;
         this.executor = Executors.newFixedThreadPool(2);
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
+    }
+
+    @Override
+    public void onSnapshot(AnalyticsSnapshot snapshot, LocalTime time) {
+        submitSnapshotTask();
     }
 
     public void shutdown() {
@@ -48,12 +54,30 @@ public class FileService {
         }
     }
 
-    public void startSnapshots(Supplier<Collection<ProcessRecord>> supplier) {
-        scheduler.scheduleAtFixedRate(() -> {
-            Path path = Path.of("snapshot_" + System.currentTimeMillis() + ".csv");
+    public void startSnapshots() {
+        scheduler.scheduleAtFixedRate(this::submitSnapshotTask, 0, MyConfig.SNAPSHOT_INTERVAL.get(), TimeUnit.SECONDS);
+    }
 
-            executor.submit(new SnapshotTask(analyticsService.getSnapshot(), path));
+    private final AtomicLong lastSnapshotMillis = new AtomicLong(0);
 
-        }, 0, SNAPSHOT_SECONDS, TimeUnit.SECONDS);
+    private void submitSnapshotTask() {
+        long currentMillis = System.currentTimeMillis();
+
+        boolean shouldSubmit = lastSnapshotMillis.updateAndGet(prev -> Math.max(prev, currentMillis)) < currentMillis;
+
+        if (!shouldSubmit) {
+            return;
+        }
+
+        Path path = Path.of("snapshot_" + currentMillis + ".csv");
+        executor.submit(new SnapshotTask(analyticsService.getSnapshot(), path));
+    }
+
+    public void save() {
+
+    }
+
+    public void load() {
+
     }
 }

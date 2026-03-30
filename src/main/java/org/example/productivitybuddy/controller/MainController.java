@@ -13,11 +13,13 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
+import org.example.productivitybuddy.MainApp;
 import org.example.productivitybuddy.services.AnalyticsService;
 import org.example.productivitybuddy.model.CategoryStats;
 import org.example.productivitybuddy.model.ProcessCategory;
 import org.example.productivitybuddy.model.ProcessRecord;
 import org.example.productivitybuddy.model.ProcessRegistry;
+import org.example.productivitybuddy.services.FileService;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -51,14 +53,16 @@ public class MainController {
     private final ObservableList<CategoryStats> categoryStatsList = FXCollections.observableArrayList();
 
     private AnalyticsService analyticsService;
+    private FileService fileService;
     private ProcessRegistry registry;
 
     private ProcessDetailController processDetailController;
     private CategoryDetailController categoryDetailController;
 
-    public void setAnalyticsServiceAndRegistry(AnalyticsService analyticsService, ProcessRegistry registry) {
+    public void setServicesAndRegistry(ProcessRegistry registry, AnalyticsService analyticsService, FileService fileService) {
         this.analyticsService = analyticsService;
         this.registry = registry;
+        this.fileService = fileService;
         startUIUpdater();
     }
 
@@ -260,16 +264,16 @@ public class MainController {
 
     @FXML
     private void onSave() {
-        System.out.println("Save clicked");
+        fileService.save();
     }
 
     @FXML
     private void onLoad() {
-        System.out.println("Load clicked");
+        fileService.load();
     }
 
     @FXML
     private void onShutdown() {
-        System.exit(0);
+        Platform.exit();
     }
 }

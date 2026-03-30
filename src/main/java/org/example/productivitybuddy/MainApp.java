@@ -5,6 +5,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import org.example.productivitybuddy.model.MyConfig;
 import org.example.productivitybuddy.services.AnalyticsService;
 import org.example.productivitybuddy.controller.MainController;
 import org.example.productivitybuddy.model.ProcessRegistry;
@@ -26,10 +27,6 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        startScheduledScanner();
-        analyticsService.start();
-        fileService.startSnapshots(registry::getAllProcesses);
-
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/org/example/productivitybuddy/main-view.fxml")
         );
@@ -48,7 +45,11 @@ public class MainApp extends Application {
         //--------------------------------------------------
 
         MainController controller = loader.getController();
-        controller.setAnalyticsServiceAndRegistry(analyticsService, registry);
+        controller.setServicesAndRegistry(registry, analyticsService, fileService);
+
+        startScheduledScanner();
+        analyticsService.start();
+        fileService.startSnapshots();
     }
 
     private void startScheduledScanner() {
@@ -64,7 +65,7 @@ public class MainApp extends Application {
         scheduler.scheduleWithFixedDelay(
                 scannerTask,
                 0,
-                registry.REFRESH_MILLISECONDS,
+                MyConfig.MONITOR_INTERVAL.get(),
                 TimeUnit.MILLISECONDS
         );
     }

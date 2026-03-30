@@ -6,7 +6,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class ProcessRegistry {
-    public final int REFRESH_MILLISECONDS = 1000;
     private final ConcurrentHashMap<Integer, ProcessRecord> processes = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Object> nameLocks = new ConcurrentHashMap<>();
 
@@ -28,7 +27,7 @@ public class ProcessRegistry {
                         }
                     }
 
-                    oldP.setTotalTimeMilliseconds(oldP.getTotalTimeMilliseconds() + REFRESH_MILLISECONDS);
+                    oldP.setTotalTimeMilliseconds(oldP.getTotalTimeMilliseconds() + MyConfig.MONITOR_INTERVAL.get());
                     oldP.setLastSeenTimestamp(systemTimeMillis);
                     oldP.setPreviousTotalCpuTicks(newP.getTotalTicks());
                     oldP.setRamUsage(newP.getRamUsage());
