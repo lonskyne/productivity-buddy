@@ -45,8 +45,13 @@ public class ProcessDetailController {
         ramLabel.setText(String.format("%.0f MB", ramMB));
 
         // Rankings
-        int cpuRank = analyticsService.getSnapshot().getCpuRankByPid(process.getPid());
-        int ramRank = analyticsService.getSnapshot().getRamRankByPid(process.getPid());
+        Integer cpuRank = analyticsService.getSnapshot().getCpuRankByPid(process.getPid());
+        Integer ramRank = analyticsService.getSnapshot().getRamRankByPid(process.getPid());
+
+        if(cpuRank == null || ramRank == null) {
+            onBack();
+            return;
+        }
 
         cpuRankLabel.setText(formatRank(cpuRank));
         ramRankLabel.setText(formatRank(ramRank));

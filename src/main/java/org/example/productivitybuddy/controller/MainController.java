@@ -16,11 +16,8 @@ import javafx.scene.layout.StackPane;
 import javafx.stage.FileChooser;
 import org.example.productivitybuddy.MainApp;
 import org.example.productivitybuddy.dto.ProcessInfoDTO;
+import org.example.productivitybuddy.model.*;
 import org.example.productivitybuddy.services.AnalyticsService;
-import org.example.productivitybuddy.model.CategoryStats;
-import org.example.productivitybuddy.model.ProcessCategory;
-import org.example.productivitybuddy.model.ProcessRecord;
-import org.example.productivitybuddy.model.ProcessRegistry;
 import org.example.productivitybuddy.services.FileService;
 
 import java.io.File;
@@ -69,6 +66,7 @@ public class MainController {
         this.registry = registry;
         this.fileService = fileService;
         startUIUpdater();
+        loadMappingFile();
     }
 
     @FXML
@@ -147,18 +145,22 @@ public class MainController {
                         categoryDetailController.fetchProcesses();
                     }
 
-                    Platform.runLater(() -> {
-                        updateProcessTable(analyticsService.getSnapshot().getAllProcesses());
-                        updatePieChart();
+                    AnalyticsSnapshot snapshot = analyticsService.getSnapshot();
 
-                        if(processDetailController != null) {
-                            processDetailController.updateDetailView();
-                        }
+                    if(snapshot != null) {
+                        Platform.runLater(() -> {
+                            updateProcessTable(snapshot.getAllProcesses());
+                            updatePieChart();
 
-                        if(categoryDetailController != null) {
-                            categoryDetailController.updateDetailView();
-                        }
-                    });
+                            if (processDetailController != null) {
+                                processDetailController.updateDetailView();
+                            }
+
+                            if (categoryDetailController != null) {
+                                categoryDetailController.updateDetailView();
+                            }
+                        });
+                    }
                 }
 
                 try {
@@ -288,21 +290,34 @@ public class MainController {
 
         File file = chooser.showOpenDialog(null);
         if (file != null) {
-            fileService.loadAsync(file.toPath(), wrapper -> {
-
-                for (ProcessInfoDTO dto : wrapper.processes) {
-                    registry.applyLoadedState(dto);
-                }
-
-            });
+            MyConfig.MAPPING_FILE = file.toPath();
+            loadMappingFile();
         }
+    }
+
+    private void loadMappingFile() {
+        Path path = MyConfig.MAPPING_FILE;
+
+        fileService.loadAsync(path, wrapper -> {
+            for (ProcessInfoDTO dto : wrapper.processes) {
+                registry.applyLoadedState(dto, true);
+            }
+        });
+
+        fileService.startWatching(path, updatedPath -> {
+            fileService.loadAsync(updatedPath, wrapper -> {
+                for (ProcessInfoDTO dto : wrapper.processes) {
+                    registry.applyLoadedState(dto, false);
+                }
+            });
+        });
     }
 
     @FXML
     private void onShutdown() {
         Future<?> future = fileService.shutdownSaveAsync(
                 registry.getAllProcesses(),
-                Path.of("process_info.json")
+                MyConfig.MAPPING_FILE
         );
 
         new Thread(() -> {

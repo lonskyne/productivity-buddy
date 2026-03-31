@@ -118,14 +118,17 @@ public class ProcessRegistry {
         return nameLocks.computeIfAbsent(name, k -> new Object());
     }
 
-    public void applyLoadedState(ProcessInfoDTO dto) {
+    public void applyLoadedState(ProcessInfoDTO dto, boolean resetSessionTime) {
         processes.values().forEach(p -> {
             if (p.getOriginalName().equals(dto.originalName)) {
                 p.setAliasName(dto.aliasName);
                 p.setCategory(ProcessCategory.valueOf(dto.category));
                 p.setIsTrackingFrozen(dto.isTrackingFreezed);
                 p.setStartTimeMilliseconds(dto.totalTimeSeconds * 1000);
-                p.setSessionTimeMilliseconds(0);
+
+                if(resetSessionTime) {
+                    p.setSessionTimeMilliseconds(0);
+                }
             }
         });
     }

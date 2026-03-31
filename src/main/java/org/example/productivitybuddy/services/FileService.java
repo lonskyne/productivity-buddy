@@ -27,11 +27,13 @@ public class FileService implements SnapshotListener {
     private final ExecutorService executor;
     private final ScheduledExecutorService scheduler;
     private final AnalyticsService analyticsService;
+    private final WatcherService watcher;
 
     public FileService(AnalyticsService analyticsService) {
         this.analyticsService = analyticsService;
         this.executor = Executors.newFixedThreadPool(2);
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
+        this.watcher = new WatcherService(executor);
     }
 
     @Override
@@ -105,7 +107,9 @@ public class FileService implements SnapshotListener {
                     return dto;
                 }).toList();
 
+                watcher.isInternalWrite.set(true);
                 writeJson(wrapper, path);
+                watcher.isInternalWrite.set(false);
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -176,5 +180,13 @@ public class FileService implements SnapshotListener {
                 e.printStackTrace();
             }
         });
+    }
+
+    public void startWatching(Path path, Consumer<Path> onChange) {
+        watcher.startWatching(path, onChange);
+    }
+
+    public void stopWatching() {
+        watcher.stopWatching();
     }
 }

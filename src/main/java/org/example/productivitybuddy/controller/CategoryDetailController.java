@@ -103,7 +103,7 @@ public class CategoryDetailController {
     public void updateDetailView() {
         updateProcessTable(processes);
         updatePieChart();
-        updateSummary(processes);
+        updateSummary();
     }
 
     private void updatePieChart() {
@@ -156,7 +156,7 @@ public class CategoryDetailController {
         processTable.refresh();
     }
 
-    private void updateSummary(List<ProcessRecord> processes) {
+    private void updateSummary() {
         long total = analyticsService.getSnapshot().getTotalTimeByCategory(category);
 
         categorySummary.setText(category + " total time - " + TimeFormatter.formatTime(total));
