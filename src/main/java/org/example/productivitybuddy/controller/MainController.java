@@ -13,7 +13,9 @@ import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
+import javafx.stage.FileChooser;
 import org.example.productivitybuddy.MainApp;
+import org.example.productivitybuddy.dto.ProcessInfoDTO;
 import org.example.productivitybuddy.services.AnalyticsService;
 import org.example.productivitybuddy.model.CategoryStats;
 import org.example.productivitybuddy.model.ProcessCategory;
@@ -21,10 +23,13 @@ import org.example.productivitybuddy.model.ProcessRecord;
 import org.example.productivitybuddy.model.ProcessRegistry;
 import org.example.productivitybuddy.services.FileService;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 public class MainController {
     public final int UI_REFRESH_MILLIS = 500;
@@ -264,16 +269,51 @@ public class MainController {
 
     @FXML
     private void onSave() {
-        fileService.save();
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save State");
+
+        File file = chooser.showSaveDialog(null);
+        if (file != null) {
+            fileService.saveAsync(
+                    registry.getAllProcesses(),
+                    file.toPath()
+            );
+        }
     }
 
     @FXML
     private void onLoad() {
-        fileService.load();
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Load State");
+
+        File file = chooser.showOpenDialog(null);
+        if (file != null) {
+            fileService.loadAsync(file.toPath(), wrapper -> {
+
+                for (ProcessInfoDTO dto : wrapper.processes) {
+                    registry.applyLoadedState(dto);
+                }
+
+            });
+        }
     }
 
     @FXML
     private void onShutdown() {
-        Platform.exit();
+        Future<?> future = fileService.shutdownSaveAsync(
+                registry.getAllProcesses(),
+                Path.of("process_info.json")
+        );
+
+        new Thread(() -> {
+            try {
+                future.get(); // wait for completion
+
+                Platform.runLater(Platform::exit);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 }

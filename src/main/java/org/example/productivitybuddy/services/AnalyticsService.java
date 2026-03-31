@@ -92,11 +92,11 @@ public class AnalyticsService {
                 .collect(Collectors.groupingBy(
                         p -> Optional.ofNullable(p.getCategory())
                                 .orElse(ProcessCategory.UNCATEGORIZED),
-                        Collectors.summingLong(ProcessRecord::getTotalTimeMilliseconds)
+                        Collectors.summingLong(ProcessRecord::getSessionTimeMilliseconds)
                 ));
 
         long totalTime = uniqueProcesses.stream()
-                .mapToLong(ProcessRecord::getTotalTimeMilliseconds)
+                .mapToLong(ProcessRecord::getSessionTimeMilliseconds)
                 .sum();
 
         HashMap<ProcessCategory, List<ProcessRecord>> processesByCategory = new HashMap<>();
@@ -115,7 +115,7 @@ public class AnalyticsService {
             top10PerCategory.put(cat,
                     uniqueProcesses.stream()
                             .filter(p -> cat.equals(p.getCategory()))
-                            .sorted(Comparator.comparingLong(ProcessRecord::getTotalTimeMilliseconds).reversed())
+                            .sorted(Comparator.comparingLong(ProcessRecord::getSessionTimeMilliseconds).reversed())
                             .limit(10)
                             .toList()
             );
@@ -127,7 +127,7 @@ public class AnalyticsService {
             totalTimePerCategory.put(cat,
                     uniqueProcesses.stream()
                             .filter(p -> cat.equals(p.getCategory()))
-                            .mapToLong(ProcessRecord::getTotalTimeMilliseconds)
+                            .mapToLong(ProcessRecord::getSessionTimeMilliseconds)
                             .sum()
             );
         }

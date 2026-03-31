@@ -47,7 +47,7 @@ public class CategoryDetailController {
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("aliasName"));
 
         timeColumn.setCellValueFactory(cellData -> {
-            long totalMs = cellData.getValue().getTotalTimeMilliseconds();
+            long totalMs = cellData.getValue().getSessionTimeMilliseconds();
             return new ReadOnlyObjectWrapper<String>(TimeFormatter.formatTime(totalMs));
         });
 
@@ -115,7 +115,7 @@ public class CategoryDetailController {
 
         for (ProcessRecord p : top10) {
             String name = p.getOriginalName();
-            long time = p.getTotalTimeMilliseconds();
+            long time = p.getSessionTimeMilliseconds();
 
             PieChart.Data data = pieMap.get(name);
 

@@ -1,5 +1,7 @@
 package org.example.productivitybuddy.model;
 
+import org.example.productivitybuddy.dto.ProcessInfoDTO;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -27,7 +29,7 @@ public class ProcessRegistry {
                         }
                     }
 
-                    oldP.setTotalTimeMilliseconds(oldP.getTotalTimeMilliseconds() + MyConfig.MONITOR_INTERVAL.get());
+                    oldP.setSessionTimeMilliseconds(oldP.getSessionTimeMilliseconds() + MyConfig.MONITOR_INTERVAL.get());
                     oldP.setLastSeenTimestamp(systemTimeMillis);
                     oldP.setPreviousTotalCpuTicks(newP.getTotalTicks());
                     oldP.setRamUsage(newP.getRamUsage());
@@ -44,14 +46,6 @@ public class ProcessRegistry {
                 .filter(p -> originalName.equals(p.getOriginalName()))
                 .findAny()
                 .orElse(null);
-    }
-
-    public ProcessRecord getProcess(int pid) {
-        return processes.get(pid);
-    }
-
-    public ProcessRecord putIfAbsent(int pid, ProcessRecord record) {
-        return processes.putIfAbsent(pid, record);
     }
 
     public Collection<ProcessRecord> getAllProcesses() {
@@ -124,4 +118,15 @@ public class ProcessRegistry {
         return nameLocks.computeIfAbsent(name, k -> new Object());
     }
 
+    public void applyLoadedState(ProcessInfoDTO dto) {
+        processes.values().forEach(p -> {
+            if (p.getOriginalName().equals(dto.originalName)) {
+                p.setAliasName(dto.aliasName);
+                p.setCategory(ProcessCategory.valueOf(dto.category));
+                p.setIsTrackingFrozen(dto.isTrackingFreezed);
+                p.setStartTimeMilliseconds(dto.totalTimeSeconds * 1000);
+                p.setSessionTimeMilliseconds(0);
+            }
+        });
+    }
 }

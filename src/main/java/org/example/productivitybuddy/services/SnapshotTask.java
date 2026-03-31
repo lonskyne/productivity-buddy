@@ -39,7 +39,7 @@ public class SnapshotTask implements Runnable {
                         p.getCategory(),
                         p.getCpuUsage(),
                         p.getRamUsage(),
-                        p.getTotalTimeMilliseconds(),
+                        p.getSessionTimeMilliseconds(),
                         snapshot.getCpuRankByPid(p.getPid()),
                         snapshot.getRamRankByPid(p.getPid())
                 ));
@@ -59,7 +59,7 @@ public class SnapshotTask implements Runnable {
                                 p.getOriginalName(),
                                 p.getCpuUsage(),
                                 p.getRamUsage(),
-                                p.getTotalTimeMilliseconds()
+                                p.getSessionTimeMilliseconds()
                         ));
                     }
                 }

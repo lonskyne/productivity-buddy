@@ -1,15 +1,26 @@
 package org.example.productivitybuddy.services;
 
+import javafx.application.Platform;
+import org.example.productivitybuddy.dto.ProcessInfoDTO;
+import org.example.productivitybuddy.dto.ProcessInfoWrapper;
 import org.example.productivitybuddy.model.AnalyticsSnapshot;
 import org.example.productivitybuddy.model.MyConfig;
+import org.example.productivitybuddy.model.ProcessRecord;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalTime;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import static org.example.productivitybuddy.util.JsonHandler.readJson;
+import static org.example.productivitybuddy.util.JsonHandler.writeJson;
 
 
 public class FileService implements SnapshotListener {
@@ -73,11 +84,97 @@ public class FileService implements SnapshotListener {
         executor.submit(new SnapshotTask(analyticsService.getSnapshot(), path));
     }
 
-    public void save() {
+    public void saveAsync(Collection<ProcessRecord> processes, Path path) {
+        executor.submit(() -> {
+            try {
+                Map<String, ProcessRecord> uniqueByName = processes.stream()
+                        .collect(Collectors.toMap(
+                                ProcessRecord::getOriginalName,
+                                p -> p,
+                                (p1, p2) -> p1
+                        ));
 
+                ProcessInfoWrapper wrapper = new ProcessInfoWrapper();
+                wrapper.processes = uniqueByName.values().stream().map(p -> {
+                    ProcessInfoDTO dto = new ProcessInfoDTO();
+                    dto.originalName = p.getOriginalName();
+                    dto.aliasName = p.getAliasName();
+                    dto.category = p.getCategory().toString();
+                    dto.isTrackingFreezed = p.getIsTrackingFrozen();
+                    dto.totalTimeSeconds = (p.getSessionTimeMilliseconds() + p.getStartTimeMilliseconds()) / 1000;
+                    return dto;
+                }).toList();
+
+                writeJson(wrapper, path);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
-    public void load() {
+    public void loadAsync(Path path, Consumer<ProcessInfoWrapper> onLoaded) {
+        executor.submit(() -> {
+            try {
+                ProcessInfoWrapper wrapper = readJson(path);
 
+                Platform.runLater(() -> onLoaded.accept(wrapper));
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public Future<?> shutdownSaveAsync(
+            Collection<ProcessRecord> processes,
+            Path path
+    ) {
+        return executor.submit(() -> {
+            try {
+                Map<String, ProcessRecord> uniqueByName = processes.stream()
+                        .collect(Collectors.toMap(
+                                ProcessRecord::getOriginalName,
+                                p -> p,
+                                (p1, p2) -> p1
+                        ));
+
+                ProcessInfoWrapper existing;
+
+                if (Files.exists(path)) {
+                    existing = readJson(path);
+                } else {
+                    existing = new ProcessInfoWrapper();
+                    existing.processes = new ArrayList<>();
+                }
+
+                Map<String, ProcessInfoDTO> map = new HashMap<>();
+
+                // existing data
+                for (ProcessInfoDTO dto : existing.processes) {
+                    map.put(dto.originalName, dto);
+                }
+
+                for (ProcessRecord p : uniqueByName.values()) {
+                    ProcessInfoDTO dto = map.getOrDefault(p.getOriginalName(), new ProcessInfoDTO());
+
+                    dto.originalName = p.getOriginalName();
+                    dto.aliasName = p.getAliasName();
+                    dto.category = p.getCategory().toString();
+                    dto.isTrackingFreezed = p.getIsTrackingFrozen();
+                    dto.totalTimeSeconds = (p.getSessionTimeMilliseconds() + p.getStartTimeMilliseconds()) / 1000;;
+
+                    map.put(dto.originalName, dto);
+                }
+
+                ProcessInfoWrapper result = new ProcessInfoWrapper();
+                result.processes = new ArrayList<>(map.values());
+
+                writeJson(result, path);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 }

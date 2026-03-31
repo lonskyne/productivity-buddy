@@ -36,7 +36,8 @@ public class ProcessScannerTask extends RecursiveAction {
                     record.setCategory(existing.getCategory());
                     record.setAliasName(existing.getAliasName());
                     record.setIsTrackingFrozen(existing.getIsTrackingFrozen());
-                    record.setTotalTimeMilliseconds(existing.getTotalTimeMilliseconds());
+                    record.setSessionTimeMilliseconds(existing.getSessionTimeMilliseconds());
+                    record.setStartTimeMilliseconds(existing.getStartTimeMilliseconds());
                 }
 
                 registry.updateProcess(record);

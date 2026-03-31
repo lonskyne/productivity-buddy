@@ -17,7 +17,8 @@ public class ProcessRecord {
     private final AtomicLong previousTotalCpuTicks;
 
     private final AtomicBoolean isTrackingFrozen;
-    private final AtomicLong totalTimeMilliseconds;
+    private final AtomicLong sessionTimeMilliseconds;
+    private final AtomicLong startTimeMilliseconds;
 
     private final AtomicLong lastSeenTimestamp;
     private final AtomicLong totalTicks;
@@ -29,7 +30,8 @@ public class ProcessRecord {
         this.totalTicks = new AtomicLong(totalTicks);
 
         this.aliasName = originalName;
-        this.totalTimeMilliseconds = new AtomicLong(0);
+        this.sessionTimeMilliseconds = new AtomicLong(0);
+        this.startTimeMilliseconds = new AtomicLong(0);
         this.category = ProcessCategory.UNCATEGORIZED;
         this.isTrackingFrozen = new AtomicBoolean(false);
         this.lastSeenTimestamp = new AtomicLong(System.currentTimeMillis());
@@ -52,12 +54,20 @@ public class ProcessRecord {
         return pid;
     }
 
-    public long getTotalTimeMilliseconds() {
-        return totalTimeMilliseconds.get();
+    public long getSessionTimeMilliseconds() {
+        return sessionTimeMilliseconds.get();
     }
 
-    public void setTotalTimeMilliseconds(long totalTimeMilliseconds) {
-        this.totalTimeMilliseconds.set(totalTimeMilliseconds);
+    public void setSessionTimeMilliseconds(long sessionTimeMilliseconds) {
+        this.sessionTimeMilliseconds.set(sessionTimeMilliseconds);
+    }
+
+    public long getStartTimeMilliseconds() {
+        return startTimeMilliseconds.get();
+    }
+
+    public void setStartTimeMilliseconds(long startTimeMilliseconds) {
+        this.startTimeMilliseconds.set(startTimeMilliseconds);
     }
 
     public long getLastSeenTimestamp() {
@@ -131,7 +141,7 @@ public class ProcessRecord {
     }
 
     public String getTimeFormatted() {
-        return TimeFormatter.formatTime(getTotalTimeMilliseconds());
+        return TimeFormatter.formatTime(getSessionTimeMilliseconds());
     }
 
     public String getAliasName() {
