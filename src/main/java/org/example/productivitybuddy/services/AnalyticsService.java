@@ -3,6 +3,7 @@ package org.example.productivitybuddy.services;
 import org.example.productivitybuddy.model.*;
 
 import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
@@ -13,6 +14,8 @@ public class AnalyticsService {
     private final ProcessRegistry registry;
 
     private volatile AnalyticsSnapshot snapshot;
+
+    private final List<SnapshotListener> listeners = new CopyOnWriteArrayList<>();
 
     private Thread worker;
     private volatile boolean running = false;
@@ -30,6 +33,7 @@ public class AnalyticsService {
             while (running) {
                 try {
                     recompute();
+                    checkAndFireSnapshot();
                     Thread.sleep(REFRESH_MILLISECONDS);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -140,5 +144,33 @@ public class AnalyticsService {
             }
         }
         return -1;
+    }
+
+    public void addSnapshotListener(SnapshotListener listener) {
+        listeners.add(listener);
+    }
+
+    public void removeSnapshotListener(SnapshotListener listener) {
+        listeners.remove(listener);
+    }
+
+    private void notifyListeners(LocalTime time) {
+        for (SnapshotListener listener : listeners) {
+            listener.onSnapshot(snapshot, time);
+        }
+    }
+
+    private void checkAndFireSnapshot() {
+        if (MyConfig.SNAPSHOT_FIXED_TIMES.isEmpty() || snapshot == null) return;
+
+        LocalTime now = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
+
+        boolean matches = MyConfig.SNAPSHOT_FIXED_TIMES.stream()
+                .map(t -> t.truncatedTo(ChronoUnit.SECONDS))
+                .anyMatch(now::equals);
+
+        if (matches) {
+            notifyListeners(now);
+        }
     }
 }

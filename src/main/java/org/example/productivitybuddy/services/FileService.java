@@ -34,10 +34,12 @@ public class FileService implements SnapshotListener {
         this.executor = Executors.newFixedThreadPool(2);
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
         this.watcher = new WatcherService(executor);
+        this.analyticsService.addSnapshotListener(this);
     }
 
     @Override
     public void onSnapshot(AnalyticsSnapshot snapshot, LocalTime time) {
+        System.out.println("HEARD SNAPSHOT");
         submitSnapshotTask();
     }
 
@@ -76,13 +78,15 @@ public class FileService implements SnapshotListener {
     private void submitSnapshotTask() {
         long currentMillis = System.currentTimeMillis();
 
-        boolean shouldSubmit = lastSnapshotMillis.updateAndGet(prev -> Math.max(prev, currentMillis)) < currentMillis;
+        boolean shouldSubmit = lastSnapshotMillis.getAndUpdate(prev -> Math.max(prev, currentMillis)) < currentMillis;
 
         if (!shouldSubmit) {
+            System.out.println("SHOULD NOT SUBMIT");
             return;
         }
 
         Path path = Path.of("snapshot_" + currentMillis + ".csv");
+        System.out.println("SUBMITTING TASK TO " + path);
         executor.submit(new SnapshotTask(analyticsService.getSnapshot(), path));
     }
 

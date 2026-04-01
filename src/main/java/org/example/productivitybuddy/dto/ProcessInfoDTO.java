@@ -4,6 +4,6 @@ public class ProcessInfoDTO {
     public String originalName;
     public String aliasName;
     public String category;
-    public boolean isTrackingFreezed;
+    public Boolean isTrackingFreezed;
     public long totalTimeSeconds;
 }

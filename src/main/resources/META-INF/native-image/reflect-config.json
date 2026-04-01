@@ -827,25 +827,25 @@
   "type":"org.example.productivitybuddy.controller.MainController",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
-  "methods":[{"name":"<init>","parameterTypes":[] },{"name":"initialize","parameterTypes":[] },{"name":"onShutdown","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":[] },{"name":"initialize","parameterTypes":[] },{"name":"onLoad","parameterTypes":[] },{"name":"onSave","parameterTypes":[] },{"name":"onShutdown","parameterTypes":[] },{"name":"toggleDarkMode","parameterTypes":[] }]
 },
 {
   "type":"org.example.productivitybuddy.controller.MainController",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
-  "methods":[{"name":"<init>","parameterTypes":[] },{"name":"initialize","parameterTypes":[] },{"name":"onLoad","parameterTypes":[] },{"name":"onSave","parameterTypes":[] },{"name":"onShutdown","parameterTypes":[] },{"name":"toggleDarkMode","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":[] },{"name":"initialize","parameterTypes":[] },{"name":"onShutdown","parameterTypes":[] },{"name":"toggleDarkMode","parameterTypes":[] }]
 },
 {
   "type":"org.example.productivitybuddy.controller.ProcessDetailController",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
-  "methods":[{"name":"<init>","parameterTypes":[] },{"name":"onChangeCategory","parameterTypes":[] },{"name":"onFreeze","parameterTypes":[] },{"name":"onRename","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":[] },{"name":"onKill","parameterTypes":[] }]
 },
 {
   "type":"org.example.productivitybuddy.controller.ProcessDetailController",
   "allDeclaredFields":true,
   "queryAllDeclaredMethods":true,
-  "methods":[{"name":"<init>","parameterTypes":[] },{"name":"onBack","parameterTypes":[] }]
+  "methods":[{"name":"<init>","parameterTypes":[] },{"name":"onBack","parameterTypes":[] },{"name":"onChangeCategory","parameterTypes":[] },{"name":"onFreeze","parameterTypes":[] },{"name":"onRename","parameterTypes":[] }]
 },
 {
   "type":"org.example.productivitybuddy.dto.ProcessInfoDTO",
@@ -927,6 +927,16 @@
 {
   "type":{
     "proxy":["com.sun.jna.platform.linux.Udev"]
+  }
+},
+{
+  "type":{
+    "proxy":["com.sun.jna.platform.linux.Udev"]
+  }
+},
+{
+  "type":{
+    "proxy":["oshi.jna.platform.linux.LinuxLibc"]
   }
 },
 {

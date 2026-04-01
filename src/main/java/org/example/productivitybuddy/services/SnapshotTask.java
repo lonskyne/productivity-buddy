@@ -23,6 +23,7 @@ public class SnapshotTask implements Runnable {
     @Override
     public void run() {
         try (BufferedWriter writer = Files.newBufferedWriter(outputPath)) {
+            System.out.println(outputPath);
             writer.write("TOTAL_TIME_MS," + snapshot.getTotalTime() + "\n\n");
             writer.write("CATEGORY,TOTAL_TIME_MS\n");
 
