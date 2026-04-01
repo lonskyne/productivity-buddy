@@ -1,0 +1,116 @@
+/* ======================
+   Root & general containers
+   ====================== */
+.root, VBox, HBox, StackPane {
+    -fx-background-color: #ffffff; /* light background */
+    -fx-border-color: #cccccc;     /* light gray border */
+    -fx-border-width: 1px;
+}
+
+/* Make all Labels dark by default */
+Label {
+    -fx-text-fill: #202020; /* dark text for light background */
+}
+
+/* ======================
+   SplitPane divider (draggable handle)
+   ====================== */
+.split-pane .split-pane-divider,
+.split-pane .split-pane-divider:horizontal,
+.split-pane .split-pane-divider:vertical {
+    -fx-background-color: #cccccc; /* light divider */
+}
+
+/* ======================
+   TableView background and borders
+   ====================== */
+.table-view {
+    -fx-background-color: #ffffff;
+    -fx-control-inner-background: #ffffff;
+    -fx-table-cell-border-color: #cccccc;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 1px;
+}
+.table-view .filler {
+    -fx-background-color: #ffffff;
+}
+
+/* ======================
+   Table header row
+   ====================== */
+.table-view .column-header-background {
+    -fx-background-color: #f0f0f0; /* light header background */
+}
+.table-view .column-header,
+.table-view .column-header .label {
+    -fx-background-color: #f0f0f0;
+    -fx-text-fill: #202020;        /* dark text for header */
+    -fx-font-weight: bold;
+}
+.table-view .corner {
+    -fx-background-color: #f0f0f0;
+    -fx-border-color: #cccccc;
+    -fx-border-width: 0 0 1 1;
+}
+
+/* ======================
+   Table rows & alternating colors
+   ====================== */
+.table-view .table-row-cell:odd {
+    -fx-background-color: #ffffff;
+}
+.table-view .table-row-cell:even {
+    -fx-background-color: #f8f8f8; /* slightly darker row */
+}
+.table-view .table-cell {
+    -fx-text-fill: #202020;
+}
+.table-view .table-row-cell:filled:selected {
+    -fx-background-color: #d0d0d0;
+}
+.table-view .table-row-cell:hover {
+    -fx-background-color: #e8e8e8;
+}
+
+/* ======================
+   Scrollbars
+   ====================== */
+.scroll-bar:vertical, .scroll-bar:horizontal {
+    -fx-background-color: #f0f0f0;
+}
+.scroll-bar .thumb {
+    -fx-background-color: #cccccc;
+    -fx-background-insets: 2;
+}
+.scroll-bar .thumb:hover {
+    -fx-background-color: #aaaaaa;
+}
+
+/* ======================
+   Buttons
+   ====================== */
+.button {
+    -fx-background-color: #e0e0e0;
+    -fx-text-fill: #202020;
+}
+.button:hover {
+    -fx-background-color: #d0d0d0;
+}
+
+/* ======================
+   PieChart
+   ====================== */
+.chart {
+    -fx-background-color: #ffffff;
+}
+.chart-legend {
+    -fx-background-color: transparent;
+}
+.chart-legend .label {
+    -fx-text-fill: #202020; /* dark legend text */
+}
+.chart-pie-label {
+    -fx-fill: #202020;
+    -fx-font-weight: bold;
+    -fx-font-size: 12px;
+}

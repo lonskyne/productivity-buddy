@@ -8,6 +8,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.chart.PieChart;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -61,12 +62,19 @@ public class MainController {
     private ProcessDetailController processDetailController;
     private CategoryDetailController categoryDetailController;
 
+    private Scene scene;
+    private boolean darkMode = false;
+
     public void setServicesAndRegistry(ProcessRegistry registry, AnalyticsService analyticsService, FileService fileService) {
         this.analyticsService = analyticsService;
         this.registry = registry;
         this.fileService = fileService;
         startUIUpdater();
         loadMappingFile();
+    }
+
+    public void setScene(Scene scene) {
+        this.scene = scene;
     }
 
     @FXML
@@ -76,11 +84,10 @@ public class MainController {
         this.pieView = rightPane.getChildren().getFirst();
         this.mainView = root.getCenter();
 
+
         pidColumn.setCellValueFactory(new PropertyValueFactory<>("pid"));
         nameColumn.setCellValueFactory(new PropertyValueFactory<>("aliasName"));
         categoryColumn.setCellValueFactory(new PropertyValueFactory<>("category"));
-
-
 
         nameColumn.setCellFactory(col -> {
             TableCell<ProcessRecord, String> cell = new TableCell<>() {
@@ -315,6 +322,8 @@ public class MainController {
 
     @FXML
     private void onShutdown() {
+        fileService.stopWatching();
+
         Future<?> future = fileService.shutdownSaveAsync(
                 registry.getAllProcesses(),
                 MyConfig.MAPPING_FILE
@@ -330,5 +339,17 @@ public class MainController {
                 e.printStackTrace();
             }
         }).start();
+    }
+
+    @FXML
+    public void toggleDarkMode() {
+        scene.getStylesheets().clear();
+        if (darkMode) {
+            scene.getStylesheets().add(getClass().getResource("/org/example/productivitybuddy/dark-theme.css").toExternalForm());
+        } else {
+            scene.getStylesheets().add(getClass().getResource("/org/example/productivitybuddy/light-theme.css").toExternalForm());
+        }
+
+        darkMode = !darkMode;
     }
 }

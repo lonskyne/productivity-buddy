@@ -10,6 +10,7 @@
             <Button text="Save" onAction="#onSave"/>
             <Button text="Load" onAction="#onLoad"/>
             <Button text="Shutdown" onAction="#onShutdown"/>
+            <Button text="Theme" onAction="#toggleDarkMode"/>
         </HBox>
     </top>
 

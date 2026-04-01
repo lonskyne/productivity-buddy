@@ -12,6 +12,7 @@ import org.example.productivitybuddy.model.ProcessRegistry;
 import org.example.productivitybuddy.scanner.ScheduledScanner;
 import org.example.productivitybuddy.services.FileService;
 
+import java.awt.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ScheduledExecutorService;
@@ -46,10 +47,14 @@ public class MainApp extends Application {
 
         MainController controller = loader.getController();
         controller.setServicesAndRegistry(registry, analyticsService, fileService);
+        controller.setScene(scene);
 
         startScheduledScanner();
         analyticsService.start();
         fileService.startSnapshots();
+
+        scene.getStylesheets().add(getClass().getResource("/org/example/productivitybuddy/dark-theme.css").toExternalForm());
+        scene.getStylesheets().add(getClass().getResource("/org/example/productivitybuddy/light-theme.css").toExternalForm());
     }
 
     private void startScheduledScanner() {
@@ -76,7 +81,7 @@ public class MainApp extends Application {
             scheduler.shutdown();
             try {
                 if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-                    scheduler.shutdownNow();
+                scheduler.shutdownNow();
                 }
             } catch (InterruptedException e) {
                 scheduler.shutdownNow();
@@ -101,6 +106,7 @@ public class MainApp extends Application {
 
         super.stop();
     }
+
 
     public static void main(String[] args) {
         launch(args);

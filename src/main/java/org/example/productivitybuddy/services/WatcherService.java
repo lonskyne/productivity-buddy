@@ -32,22 +32,30 @@ public class WatcherService {
                 String fileName = filePath.getFileName().toString();
 
                 while (running) {
-                    WatchKey key = watchService.take(); // blocking
+                    try {
+                        WatchKey key = watchService.take(); // blocking
 
-                    for (WatchEvent<?> event : key.pollEvents()) {
-                        Path changed = (Path) event.context();
+                        for (WatchEvent<?> event : key.pollEvents()) {
+                            Path changed = (Path) event.context();
 
-                        if (changed.toString().equals(fileName)) {
-                            //debounce
-                            Thread.sleep(100);
+                            if (changed.toString().equals(fileName)) {
+                                //debounce
+                                Thread.sleep(100);
 
-                            if (!isInternalWrite.get()) {
-                                onChange.accept(filePath);
+                                if (!isInternalWrite.get()) {
+                                    onChange.accept(filePath);
+                                }
                             }
                         }
-                    }
 
-                    key.reset();
+                        key.reset();
+                    } catch (ClosedWatchServiceException e) {
+                        // Service was closed – exit the thread gracefully
+                        break;
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
                 }
 
             } catch (Exception e) {
