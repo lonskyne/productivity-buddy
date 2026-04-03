@@ -22,7 +22,8 @@ public final class ConfigLoader {
         try (InputStream is = Files.newInputStream(configPath)) {
             props.load(is);
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load config file: " + configPath, e);
+            System.out.println(("Failed to load config file: " + configPath));
+            return;
         }
 
         String monitorInterval = props.getProperty("monitor.interval");

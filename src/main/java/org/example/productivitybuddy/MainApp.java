@@ -11,8 +11,10 @@ import org.example.productivitybuddy.controller.MainController;
 import org.example.productivitybuddy.model.ProcessRegistry;
 import org.example.productivitybuddy.scanner.ScheduledScanner;
 import org.example.productivitybuddy.services.FileService;
+import org.example.productivitybuddy.util.ConfigLoader;
 
 import java.awt.*;
+import java.nio.file.Path;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ScheduledExecutorService;
@@ -28,6 +30,8 @@ public class MainApp extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
+        ConfigLoader.load(Path.of("config.properties"));
+
         FXMLLoader loader = new FXMLLoader(
                 getClass().getResource("/org/example/productivitybuddy/main-view.fxml")
         );

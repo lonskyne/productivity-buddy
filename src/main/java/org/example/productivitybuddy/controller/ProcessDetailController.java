@@ -39,6 +39,10 @@ public class ProcessDetailController {
     public void updateDetailView(AnalyticsSnapshot snapshot) {
         this.process = snapshot.getProcessByPid(processPid);
 
+        if(this.process == null) {
+            onBack();
+        }
+
         nameLabel.setText(process.getAliasName());
 
         totalTimeLabel.setText(process.getTimeFormatted());
