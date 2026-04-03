@@ -22,7 +22,6 @@ public class ProcessSnapshot {
 
     private final long lastSeenTimestamp;
 
-    // 🔥 Snapshot constructor (core idea)
     public ProcessSnapshot(ProcessRecord p) {
         this.pid = p.getPid();
         this.originalName = p.getOriginalName();
@@ -42,8 +41,6 @@ public class ProcessSnapshot {
 
         this.lastSeenTimestamp = p.getLastSeenTimestamp();
     }
-
-    // ✅ SAME GETTERS (read-only)
 
     public int getPid() {
         return pid;
