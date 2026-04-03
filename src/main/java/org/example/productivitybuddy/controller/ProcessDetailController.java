@@ -41,6 +41,7 @@ public class ProcessDetailController {
 
         if(this.process == null) {
             onBack();
+            return;
         }
 
         nameLabel.setText(process.getAliasName());
