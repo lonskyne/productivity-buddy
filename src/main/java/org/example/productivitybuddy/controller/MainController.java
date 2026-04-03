@@ -192,6 +192,11 @@ public class MainController {
 
         for (var entry : timeByCategory.entrySet()) {
             ProcessCategory category = entry.getKey();
+
+            if(category == ProcessCategory.UNCATEGORIZED) {
+                continue;
+            }
+
             long categoryTime = entry.getValue();
 
             PieChart.Data data = pieMap.get(category);
@@ -331,7 +336,9 @@ public class MainController {
 
         new Thread(() -> {
             try {
-                future.get(); // wait for completion
+                future.get(); // wait for save to finish
+
+                fileService.shutdown();
 
                 Platform.runLater(Platform::exit);
 
@@ -339,6 +346,18 @@ public class MainController {
                 e.printStackTrace();
             }
         }).start();
+
+        analyticsService.stop();
+    }
+
+    public static void printAllThreads() {
+        Thread.getAllStackTraces().keySet().forEach(thread -> {
+            System.out.println(
+                    thread.getName() +
+                            " | daemon=" + thread.isDaemon() +
+                            " | state=" + thread.getState()
+            );
+        });
     }
 
     @FXML

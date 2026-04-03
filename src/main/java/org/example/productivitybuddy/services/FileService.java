@@ -31,7 +31,11 @@ public class FileService implements SnapshotListener {
 
     public FileService(AnalyticsService analyticsService) {
         this.analyticsService = analyticsService;
-        this.executor = Executors.newFixedThreadPool(2);
+        this.executor = Executors.newFixedThreadPool(2, r -> {
+            Thread t = new Thread(r);
+            t.setDaemon(true);
+            return t;
+        });
         this.scheduler = Executors.newSingleThreadScheduledExecutor();
         this.watcher = new WatcherService(executor);
         this.analyticsService.addSnapshotListener(this);
@@ -39,34 +43,7 @@ public class FileService implements SnapshotListener {
 
     @Override
     public void onSnapshot(AnalyticsSnapshot snapshot, LocalTime time) {
-        System.out.println("HEARD SNAPSHOT");
         submitSnapshotTask();
-    }
-
-    public void shutdown() {
-        if (executor != null && !executor.isShutdown()) {
-            executor.shutdown();
-            try {
-                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
-                    executor.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                executor.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
-        }
-
-        if (scheduler != null && !scheduler.isShutdown()) {
-            scheduler.shutdown();
-            try {
-                if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-                    scheduler.shutdownNow();
-                }
-            } catch (InterruptedException e) {
-                scheduler.shutdownNow();
-                Thread.currentThread().interrupt();
-            }
-        }
     }
 
     public void startSnapshots() {
@@ -81,12 +58,10 @@ public class FileService implements SnapshotListener {
         boolean shouldSubmit = lastSnapshotMillis.getAndUpdate(prev -> Math.max(prev, currentMillis)) < currentMillis;
 
         if (!shouldSubmit) {
-            System.out.println("SHOULD NOT SUBMIT");
             return;
         }
 
         Path path = Path.of("snapshot_" + currentMillis + ".csv");
-        System.out.println("SUBMITTING TASK TO " + path);
         executor.submit(new SnapshotTask(analyticsService.getSnapshot(), path));
     }
 
@@ -170,7 +145,7 @@ public class FileService implements SnapshotListener {
                     dto.aliasName = p.getAliasName();
                     dto.category = p.getCategory().toString();
                     dto.isTrackingFreezed = p.getIsTrackingFrozen();
-                    dto.totalTimeSeconds = (p.getSessionTimeMilliseconds() + p.getStartTimeMilliseconds()) / 1000;;
+                    dto.totalTimeSeconds = (p.getSessionTimeMilliseconds() + p.getStartTimeMilliseconds()) / 1000;
 
                     map.put(dto.originalName, dto);
                 }
@@ -184,6 +159,30 @@ public class FileService implements SnapshotListener {
                 e.printStackTrace();
             }
         });
+    }
+
+    public void shutdown() {
+        if (scheduler != null && !scheduler.isShutdown()) {
+            scheduler.shutdown();
+            try {
+                if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                    System.err.println("Scheduler did not terminate in time.");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        if (executor != null && !executor.isShutdown()) {
+            executor.shutdown();
+            try {
+                if (!executor.awaitTermination(5, TimeUnit.SECONDS)) {
+                    System.err.println("Executor did not terminate in time.");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     public void startWatching(Path path, Consumer<Path> onChange) {

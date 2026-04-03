@@ -47,7 +47,15 @@ public class AnalyticsService {
 
     public void stop() {
         running = false;
-        if (worker != null) worker.interrupt();
+
+        if (worker != null) {
+            worker.interrupt();
+            try {
+                worker.join();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     public AnalyticsSnapshot getSnapshot() {
@@ -148,10 +156,6 @@ public class AnalyticsService {
 
     public void addSnapshotListener(SnapshotListener listener) {
         listeners.add(listener);
-    }
-
-    public void removeSnapshotListener(SnapshotListener listener) {
-        listeners.remove(listener);
     }
 
     private void notifyListeners(LocalTime time) {

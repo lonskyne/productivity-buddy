@@ -81,28 +81,23 @@ public class MainApp extends Application {
             scheduler.shutdown();
             try {
                 if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-                scheduler.shutdownNow();
+                    System.err.println("Scheduler did not terminate in time.");
                 }
             } catch (InterruptedException e) {
-                scheduler.shutdownNow();
                 Thread.currentThread().interrupt();
             }
         }
 
-        if (forkJoinPool != null && !forkJoinPool.isShutdown()) {
+        if (!forkJoinPool.isShutdown()) {
             forkJoinPool.shutdown();
             try {
                 if (!forkJoinPool.awaitTermination(5, TimeUnit.SECONDS)) {
-                    forkJoinPool.shutdownNow();
+                    System.err.println("ForkJoinPool did not terminate in time.");
                 }
             } catch (InterruptedException e) {
-                forkJoinPool.shutdownNow();
                 Thread.currentThread().interrupt();
             }
         }
-
-        analyticsService.stop();
-        fileService.shutdown();
 
         super.stop();
     }
