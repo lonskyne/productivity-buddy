@@ -6,6 +6,7 @@ import org.example.productivitybuddy.dto.ProcessInfoWrapper;
 import org.example.productivitybuddy.model.AnalyticsSnapshot;
 import org.example.productivitybuddy.model.MyConfig;
 import org.example.productivitybuddy.model.ProcessRecord;
+import org.example.productivitybuddy.model.ProcessSnapshot;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -65,12 +66,12 @@ public class FileService implements SnapshotListener {
         executor.submit(new SnapshotTask(analyticsService.getSnapshot(), path));
     }
 
-    public void saveAsync(Collection<ProcessRecord> processes, Path path) {
+    public void saveAsync(Collection<ProcessSnapshot> processes, Path path) {
         executor.submit(() -> {
             try {
-                Map<String, ProcessRecord> uniqueByName = processes.stream()
+                Map<String, ProcessSnapshot> uniqueByName = processes.stream()
                         .collect(Collectors.toMap(
-                                ProcessRecord::getOriginalName,
+                                ProcessSnapshot::getOriginalName,
                                 p -> p,
                                 (p1, p2) -> p1
                         ));
@@ -110,14 +111,14 @@ public class FileService implements SnapshotListener {
     }
 
     public Future<?> shutdownSaveAsync(
-            Collection<ProcessRecord> processes,
+            Collection<ProcessSnapshot> processes,
             Path path
     ) {
         return executor.submit(() -> {
             try {
-                Map<String, ProcessRecord> uniqueByName = processes.stream()
+                Map<String, ProcessSnapshot> uniqueByName = processes.stream()
                         .collect(Collectors.toMap(
-                                ProcessRecord::getOriginalName,
+                                ProcessSnapshot::getOriginalName,
                                 p -> p,
                                 (p1, p2) -> p1
                         ));
@@ -138,7 +139,7 @@ public class FileService implements SnapshotListener {
                     map.put(dto.originalName, dto);
                 }
 
-                for (ProcessRecord p : uniqueByName.values()) {
+                for (ProcessSnapshot p : uniqueByName.values()) {
                     ProcessInfoDTO dto = map.getOrDefault(p.getOriginalName(), new ProcessInfoDTO());
 
                     dto.originalName = p.getOriginalName();

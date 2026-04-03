@@ -63,29 +63,32 @@ public class AnalyticsService {
     }
 
     private void recompute() {
-        List<ProcessRecord> processList = List.copyOf(registry.getAllProcesses());
+        List<ProcessSnapshot> processList = registry.getAllProcesses()
+                .stream()
+                .map(ProcessSnapshot::new)
+                .toList();
 
-        Map<String, ProcessRecord> uniqueByName = processList.stream()
+        Map<String, ProcessSnapshot> uniqueByName = processList.stream()
                 .collect(Collectors.toMap(
-                        ProcessRecord::getOriginalName,
+                        ProcessSnapshot::getOriginalName,
                         p -> p,
                         (p1, p2) -> p1
                 ));
 
-        Collection<ProcessRecord> uniqueProcesses = uniqueByName.values();
+        Collection<ProcessSnapshot> uniqueProcesses = uniqueByName.values();
 
         Map<ProcessCategory, Long> timeByCategory = uniqueProcesses.stream()
                 .collect(Collectors.groupingBy(
                         p -> Optional.ofNullable(p.getCategory())
                                 .orElse(ProcessCategory.UNCATEGORIZED),
-                        Collectors.summingLong(ProcessRecord::getSessionTimeMilliseconds)
+                        Collectors.summingLong(ProcessSnapshot::getSessionTimeMilliseconds)
                 ));
 
         long totalTime = uniqueProcesses.stream()
-                .mapToLong(ProcessRecord::getSessionTimeMilliseconds)
+                .mapToLong(ProcessSnapshot::getSessionTimeMilliseconds)
                 .sum();
 
-        HashMap<ProcessCategory, List<ProcessRecord>> processesByCategory = new HashMap<>();
+        HashMap<ProcessCategory, List<ProcessSnapshot>> processesByCategory = new HashMap<>();
 
         for (ProcessCategory cat : ProcessCategory.values()) {
             processesByCategory.put(cat,
@@ -95,13 +98,13 @@ public class AnalyticsService {
             );
         }
 
-        HashMap<ProcessCategory, List<ProcessRecord>> top10PerCategory = new HashMap<>();
+        HashMap<ProcessCategory, List<ProcessSnapshot>> top10PerCategory = new HashMap<>();
 
         for (ProcessCategory cat : ProcessCategory.values()) {
             top10PerCategory.put(cat,
                     uniqueProcesses.stream()
                             .filter(p -> cat.equals(p.getCategory()))
-                            .sorted(Comparator.comparingLong(ProcessRecord::getSessionTimeMilliseconds).reversed())
+                            .sorted(Comparator.comparingLong(ProcessSnapshot::getSessionTimeMilliseconds).reversed())
                             .limit(10)
                             .toList()
             );
@@ -113,7 +116,7 @@ public class AnalyticsService {
             totalTimePerCategory.put(cat,
                     uniqueProcesses.stream()
                             .filter(p -> cat.equals(p.getCategory()))
-                            .mapToLong(ProcessRecord::getSessionTimeMilliseconds)
+                            .mapToLong(ProcessSnapshot::getSessionTimeMilliseconds)
                             .sum()
             );
         }
@@ -121,10 +124,13 @@ public class AnalyticsService {
         HashMap<Integer, Integer> cpuRankPerPid = new HashMap<>();
         HashMap<Integer, Integer> ramRankPerPid = new HashMap<>();
 
-        for(ProcessRecord p : processList) {
-            cpuRankPerPid.put(p.getPid(), getRank(processList, p, Comparator.comparingDouble(ProcessRecord::getCpuUsage).reversed()));
-            ramRankPerPid.put(p.getPid(), getRank(processList, p, Comparator.comparingDouble(ProcessRecord::getRamUsage).reversed()));
+        for(ProcessSnapshot p : processList) {
+            cpuRankPerPid.put(p.getPid(), getRank(processList, p, Comparator.comparingDouble(ProcessSnapshot::getCpuUsage).reversed()));
+            ramRankPerPid.put(p.getPid(), getRank(processList, p, Comparator.comparingDouble(ProcessSnapshot::getRamUsage).reversed()));
         }
+
+        Map<Integer, ProcessSnapshot> processesByPid = processList.stream()
+                .collect(Collectors.toMap(ProcessSnapshot::getPid, p -> p));
 
         snapshot = new AnalyticsSnapshot(
                 timeByCategory,
@@ -134,15 +140,16 @@ public class AnalyticsService {
                 top10PerCategory,
                 totalTimePerCategory,
                 cpuRankPerPid,
-                ramRankPerPid
+                ramRankPerPid,
+                processesByPid
         );
     }
 
-    private int getRank(Collection<ProcessRecord> all,
-                        ProcessRecord target,
-                        Comparator<ProcessRecord> comparator) {
+    private int getRank(Collection<ProcessSnapshot> all,
+                        ProcessSnapshot target,
+                        Comparator<ProcessSnapshot> comparator) {
 
-        List<ProcessRecord> sorted = all.stream()
+        List<ProcessSnapshot> sorted = all.stream()
                 .sorted(comparator)
                 .toList();
 

@@ -15,7 +15,6 @@ import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.stage.FileChooser;
-import org.example.productivitybuddy.MainApp;
 import org.example.productivitybuddy.dto.ProcessInfoDTO;
 import org.example.productivitybuddy.model.*;
 import org.example.productivitybuddy.services.AnalyticsService;
@@ -41,14 +40,14 @@ public class MainController {
     @FXML public TableColumn<CategoryStats, ProcessCategory> categoryNameColumn;
     @FXML public TableColumn<CategoryStats, String> categoryTimeColumn;
 
-    @FXML private TableView<ProcessRecord> processTable;
-    @FXML private TableColumn<ProcessRecord, Integer> pidColumn;
-    @FXML private TableColumn<ProcessRecord, String> nameColumn;
-    @FXML private TableColumn<ProcessRecord, ProcessCategory> categoryColumn;
+    @FXML private TableView<ProcessSnapshot> processTable;
+    @FXML private TableColumn<ProcessSnapshot, Integer> pidColumn;
+    @FXML private TableColumn<ProcessSnapshot, String> nameColumn;
+    @FXML private TableColumn<ProcessSnapshot, ProcessCategory> categoryColumn;
 
     @FXML private PieChart categoryChart;
 
-    private final ObservableList<ProcessRecord> processList = FXCollections.observableArrayList();
+    private final ObservableList<ProcessSnapshot> processList = FXCollections.observableArrayList();
 
     private final Map<ProcessCategory, PieChart.Data> pieMap = new HashMap<>();
     private final ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
@@ -90,7 +89,7 @@ public class MainController {
         categoryColumn.setCellValueFactory(new PropertyValueFactory<>("category"));
 
         nameColumn.setCellFactory(col -> {
-            TableCell<ProcessRecord, String> cell = new TableCell<>() {
+            TableCell<ProcessSnapshot, String> cell = new TableCell<>() {
                 @Override
                 protected void updateItem(String item, boolean empty) {
                     super.updateItem(item, empty);
@@ -100,7 +99,7 @@ public class MainController {
 
             cell.setOnMouseClicked(event -> {
                 if (!cell.isEmpty() && event.getClickCount() == 2) {
-                    ProcessRecord process = cell.getTableView()
+                    ProcessSnapshot process = cell.getTableView()
                             .getItems()
                             .get(cell.getIndex());
                     showProcessDetail(process);
@@ -111,7 +110,7 @@ public class MainController {
         });
 
         categoryColumn.setCellFactory(col -> {
-            TableCell<ProcessRecord, ProcessCategory> cell = new TableCell<>() {
+            TableCell<ProcessSnapshot, ProcessCategory> cell = new TableCell<>() {
                 @Override
                 protected void updateItem(ProcessCategory item, boolean empty) {
                     super.updateItem(item, empty);
@@ -222,13 +221,15 @@ public class MainController {
         });
     }
 
-    private void updateProcessTable(Collection<ProcessRecord> processes) {
-        // Add/update
-        for (ProcessRecord newProc : processes) {
+    private void updateProcessTable(Collection<ProcessSnapshot> processes) {
+        // Add or update
+        for (ProcessSnapshot newProc : processes) {
             int index = processList.indexOf(newProc);
 
             if (index < 0) {
                 processList.add(newProc);
+            } else {
+                processList.set(index, newProc);
             }
         }
 
@@ -240,7 +241,7 @@ public class MainController {
         processTable.refresh();
     }
 
-    private void showProcessDetail(ProcessRecord process) {
+    private void showProcessDetail(ProcessSnapshot process) {
         try {
             FXMLLoader loader = new FXMLLoader(
                     getClass().getResource("/org/example/productivitybuddy/process_detail-view.fxml")
@@ -249,7 +250,7 @@ public class MainController {
             Parent detailRoot = loader.load();
 
             processDetailController = loader.getController();
-            processDetailController.setProcess(process, registry, analyticsService);
+            processDetailController.setProcess(process.getPid(), registry, analyticsService);
             processDetailController.setOnBack(() -> {
                 processDetailController = null;
                 rightPane.getChildren().setAll(pieView);
@@ -289,7 +290,7 @@ public class MainController {
         File file = chooser.showSaveDialog(null);
         if (file != null) {
             fileService.saveAsync(
-                    registry.getAllProcesses(),
+                    analyticsService.getSnapshot().getAllProcesses(),
                     file.toPath()
             );
         }
@@ -330,7 +331,7 @@ public class MainController {
         fileService.stopWatching();
 
         Future<?> future = fileService.shutdownSaveAsync(
-                registry.getAllProcesses(),
+                analyticsService.getSnapshot().getAllProcesses(),
                 MyConfig.MAPPING_FILE
         );
 

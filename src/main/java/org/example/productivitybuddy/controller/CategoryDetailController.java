@@ -11,10 +11,9 @@ import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
-import org.example.productivitybuddy.model.ProcessRecord;
+import org.example.productivitybuddy.model.ProcessSnapshot;
 import org.example.productivitybuddy.services.AnalyticsService;
 import org.example.productivitybuddy.model.ProcessCategory;
-import org.example.productivitybuddy.model.ProcessRecord;
 import org.example.productivitybuddy.util.TimeFormatter;
 
 import java.util.*;
@@ -22,22 +21,22 @@ import java.util.stream.Collectors;
 
 public class CategoryDetailController {
 
-    @FXML public TableColumn<ProcessRecord, String> nameColumn;
-    @FXML public TableColumn<ProcessRecord, Double> cpuColumn;
-    @FXML public TableColumn<ProcessRecord, Double> ramColumn;
-    @FXML public TableColumn<ProcessRecord, String> timeColumn;
+    @FXML public TableColumn<ProcessSnapshot, String> nameColumn;
+    @FXML public TableColumn<ProcessSnapshot, Double> cpuColumn;
+    @FXML public TableColumn<ProcessSnapshot, Double> ramColumn;
+    @FXML public TableColumn<ProcessSnapshot, String> timeColumn;
     @FXML private Label categoryTitle;
     @FXML private Label categorySummary;
-    @FXML private TableView<ProcessRecord> processTable;
+    @FXML private TableView<ProcessSnapshot> processTable;
     @FXML private PieChart pieChart;
 
     private AnalyticsService analyticsService;
     private ProcessCategory category;
-    private List<ProcessRecord> processes;
+    private List<ProcessSnapshot> processes;
 
     private final Map<String, PieChart.Data> pieMap = new HashMap<>();
     private final ObservableList<PieChart.Data> pieData = FXCollections.observableArrayList();
-    private final ObservableList<ProcessRecord> processList = FXCollections.observableArrayList();
+    private final ObservableList<ProcessSnapshot> processList = FXCollections.observableArrayList();
 
     private Runnable onBack;
 
@@ -108,13 +107,13 @@ public class CategoryDetailController {
     }
 
     private void updatePieChart() {
-        List<ProcessRecord> top10 = analyticsService.getSnapshot().getTop10ByCategory(category);
+        List<ProcessSnapshot> top10 = analyticsService.getSnapshot().getTop10ByCategory(category);
 
         Set<String> currentSet = top10.stream()
-                .map(ProcessRecord::getOriginalName)
+                .map(ProcessSnapshot::getOriginalName)
                 .collect(Collectors.toSet());
 
-        for (ProcessRecord p : top10) {
+        for (ProcessSnapshot p : top10) {
             String name = p.getOriginalName();
             long time = p.getSessionTimeMilliseconds();
 
@@ -139,13 +138,17 @@ public class CategoryDetailController {
         });
     }
 
-    private void updateProcessTable(Collection<ProcessRecord> processes) {
-        // Add/update
-        for (ProcessRecord newProc : processes) {
+    private void updateProcessTable(Collection<ProcessSnapshot> processes) {
+        // Add or update
+        for (ProcessSnapshot newProc : processes) {
             int index = processList.indexOf(newProc);
 
             if (index < 0) {
+                // New process, add it
                 processList.add(newProc);
+            } else {
+                // Existing process, replace with new snapshot
+                processList.set(index, newProc);
             }
         }
 

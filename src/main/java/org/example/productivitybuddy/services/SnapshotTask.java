@@ -3,6 +3,7 @@ package org.example.productivitybuddy.services;
 import org.example.productivitybuddy.model.AnalyticsSnapshot;
 import org.example.productivitybuddy.model.ProcessCategory;
 import org.example.productivitybuddy.model.ProcessRecord;
+import org.example.productivitybuddy.model.ProcessSnapshot;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -33,7 +34,7 @@ public class SnapshotTask implements Runnable {
             writer.write("\n");
 
             writer.write("PID,Name,Category,CPU(%),RAM(bytes),Time(ms),CPU_Rank,RAM_Rank\n");
-            for (ProcessRecord p : snapshot.getAllProcesses()) {
+            for (ProcessSnapshot p : snapshot.getAllProcesses()) {
                 writer.write(String.format("%d,%s,%s,%.2f,%d,%d,%d,%d\n",
                         p.getPid(),
                         p.getOriginalName(),
@@ -52,9 +53,9 @@ public class SnapshotTask implements Runnable {
                 writer.write("\nCATEGORY: " + category + "\n");
                 writer.write("PID,Name,CPU(%),RAM(bytes),Time(ms)\n");
 
-                List<ProcessRecord> topList = snapshot.getTop10ByCategory(category);
+                List<ProcessSnapshot> topList = snapshot.getTop10ByCategory(category);
                 if (topList != null) {
-                    for (ProcessRecord p : topList) {
+                    for (ProcessSnapshot p : topList) {
                         writer.write(String.format("%d,%s,%.2f,%d,%d\n",
                                 p.getPid(),
                                 p.getOriginalName(),

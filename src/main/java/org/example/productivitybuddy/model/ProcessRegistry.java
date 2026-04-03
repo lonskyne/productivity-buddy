@@ -56,29 +56,23 @@ public class ProcessRegistry {
         processes.keySet().retainAll(pids);
     }
 
-    public void killProcess(ProcessRecord process) {
-        ProcessHandle.of(process.getPid()).ifPresent(ProcessHandle::destroy);
+    public void killProcess(int pid) {
+        ProcessHandle.of(pid).ifPresent(ProcessHandle::destroy);
     }
 
-    public void renameProcess(ProcessRecord process, String newName) {
-        String oldName = process.getAliasName();
-
-        Object lock = getLockForName(oldName);
+    public void renameProcess(String aliasName, String newName) {
+        Object lock = getLockForName(aliasName);
 
         synchronized (lock) {
             for (ProcessRecord p : processes.values()) {
-                if (oldName.equals(p.getAliasName())) {
-                    synchronized (p) {
-                        p.setAliasName(newName);
-                    }
+                if (aliasName.equals(p.getAliasName())) {
+                    p.setAliasName(newName);
                 }
             }
         }
     }
 
-    public void toggleFreezeProcess(ProcessRecord process) {
-        String name = process.getAliasName();
-
+    public void toggleFreezeProcess(String name) {
         Object lock = getLockForName(name);
 
         synchronized (lock) {
@@ -92,9 +86,7 @@ public class ProcessRegistry {
         }
     }
 
-    public void changeProcessCategory(ProcessRecord process, ProcessCategory newCategory) {
-        String name = process.getAliasName();
-
+    public void changeProcessCategory(String name, ProcessCategory newCategory) {
         Object lock = getLockForName(name);
 
         synchronized (lock) {
@@ -106,12 +98,6 @@ public class ProcessRegistry {
                 }
             }
         }
-    }
-
-    public List<ProcessRecord> getProcessesByCategory(ProcessCategory category) {
-        return processes.values().stream()
-                .filter(p -> category.equals(p.getCategory()))
-                .toList();
     }
 
     private Object getLockForName(String name) {

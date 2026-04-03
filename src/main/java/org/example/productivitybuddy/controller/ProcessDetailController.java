@@ -5,9 +5,9 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextInputDialog;
+import org.example.productivitybuddy.model.ProcessSnapshot;
 import org.example.productivitybuddy.services.AnalyticsService;
 import org.example.productivitybuddy.model.ProcessCategory;
-import org.example.productivitybuddy.model.ProcessRecord;
 import org.example.productivitybuddy.model.ProcessRegistry;
 
 import java.util.Optional;
@@ -22,19 +22,22 @@ public class ProcessDetailController {
     @FXML private Label cpuRankLabel;
     @FXML private Label ramRankLabel;
 
-    private ProcessRecord process;
+    private int processPid;
+    private ProcessSnapshot process;
     private Runnable onBack;
     private AnalyticsService analyticsService;
     private ProcessRegistry registry;
 
-    public void setProcess(ProcessRecord process, ProcessRegistry registry, AnalyticsService analyticsService) {
-        this.process = process;
+    public void setProcess(int pid, ProcessRegistry registry, AnalyticsService analyticsService) {
+        this.processPid = pid;
         this.analyticsService = analyticsService;
         this.registry = registry;
     }
 
 
     public void updateDetailView() {
+        this.process = analyticsService.getSnapshot().getProcessByPid(processPid);
+
         nameLabel.setText(process.getAliasName());
 
         totalTimeLabel.setText(process.getTimeFormatted());
@@ -81,12 +84,12 @@ public class ProcessDetailController {
     }
 
     @FXML private void onKill() {
-        registry.killProcess(process);
+        registry.killProcess(process.getPid());
         onBack.run();
     }
 
     @FXML private void onFreeze() {
-        registry.toggleFreezeProcess(process);
+        registry.toggleFreezeProcess(process.getAliasName());
 
     }
 
@@ -100,7 +103,7 @@ public class ProcessDetailController {
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(newName -> {
             nameLabel.setText(newName);
-            registry.renameProcess(process, newName);
+            registry.renameProcess(process.getAliasName(), newName);
         });
     }
 
@@ -112,7 +115,7 @@ public class ProcessDetailController {
 
         Optional<ProcessCategory> result = dialog.showAndWait();
         result.ifPresent(category -> {
-            registry.changeProcessCategory(process, category);
+            registry.changeProcessCategory(process.getAliasName(), category);
         });
     }
 }
