@@ -39,12 +39,11 @@ public class WatcherService {
                             Path changed = (Path) event.context();
 
                             if (changed.toString().equals(fileName)) {
-                                //debounce
-                                Thread.sleep(100);
-
                                 if (!isInternalWrite.get()) {
                                     onChange.accept(filePath);
                                 }
+                                //debounce
+                                Thread.sleep(100);
                             }
                         }
 

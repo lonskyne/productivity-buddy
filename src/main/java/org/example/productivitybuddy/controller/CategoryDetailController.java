@@ -101,6 +101,7 @@ public class CategoryDetailController {
     }
 
     public void updateDetailView() {
+        fetchProcesses();
         updateProcessTable(processes);
         updatePieChart();
         updateSummary();

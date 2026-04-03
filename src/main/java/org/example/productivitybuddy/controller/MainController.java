@@ -58,8 +58,8 @@ public class MainController {
     private FileService fileService;
     private ProcessRegistry registry;
 
-    private ProcessDetailController processDetailController;
-    private CategoryDetailController categoryDetailController;
+    private volatile ProcessDetailController processDetailController;
+    private volatile CategoryDetailController categoryDetailController;
 
     private Scene scene;
     private boolean darkMode = false;
@@ -147,23 +147,21 @@ public class MainController {
         Thread uiUpdater = new Thread(() -> {
             while (true) {
                 if (analyticsService != null) {
-                    if(categoryDetailController != null) {
-                        categoryDetailController.fetchProcesses();
-                    }
-
                     AnalyticsSnapshot snapshot = analyticsService.getSnapshot();
 
                     if(snapshot != null) {
                         Platform.runLater(() -> {
                             updateProcessTable(snapshot.getAllProcesses());
-                            updatePieChart();
+                            updatePieChart(snapshot);
 
-                            if (processDetailController != null) {
-                                processDetailController.updateDetailView();
+                            ProcessDetailController lpdc = processDetailController;
+                            if (lpdc != null) {
+                                lpdc.updateDetailView(snapshot);
                             }
 
-                            if (categoryDetailController != null) {
-                                categoryDetailController.updateDetailView();
+                            CategoryDetailController lcdc = categoryDetailController;
+                            if (lcdc != null) {
+                                lcdc.updateDetailView();
                             }
                         });
                     }
@@ -180,14 +178,14 @@ public class MainController {
         uiUpdater.start();
     }
 
-    private void updatePieChart() {
-        long totalTime = analyticsService.getSnapshot().getTotalTime();
+    private void updatePieChart(AnalyticsSnapshot snapshot) {
+        long totalTime = snapshot.getTotalTime();
 
         if (totalTime == 0) return;
 
         categoryStatsList.clear();
 
-        Map<ProcessCategory, Long> timeByCategory = analyticsService.getSnapshot().getTimeByCategory();
+        Map<ProcessCategory, Long> timeByCategory = snapshot.getTimeByCategory();
 
         for (var entry : timeByCategory.entrySet()) {
             ProcessCategory category = entry.getKey();
@@ -349,16 +347,6 @@ public class MainController {
         }).start();
 
         analyticsService.stop();
-    }
-
-    public static void printAllThreads() {
-        Thread.getAllStackTraces().keySet().forEach(thread -> {
-            System.out.println(
-                    thread.getName() +
-                            " | daemon=" + thread.isDaemon() +
-                            " | state=" + thread.getState()
-            );
-        });
     }
 
     @FXML

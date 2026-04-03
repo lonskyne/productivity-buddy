@@ -23,7 +23,7 @@ public class ScheduledScanner implements Runnable {
     public void run() {
         try {
             OperatingSystem os = systemInfo.getOperatingSystem();
-            var allProcesses = os.getProcesses();   // List<OSProcess>
+            var allProcesses = os.getProcesses();
 
             ProcessScannerTask rootTask = new ProcessScannerTask(allProcesses, registry);
 

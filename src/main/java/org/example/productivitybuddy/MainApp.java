@@ -53,7 +53,6 @@ public class MainApp extends Application {
         analyticsService.start();
         fileService.startSnapshots();
 
-        scene.getStylesheets().add(getClass().getResource("/org/example/productivitybuddy/dark-theme.css").toExternalForm());
         scene.getStylesheets().add(getClass().getResource("/org/example/productivitybuddy/light-theme.css").toExternalForm());
     }
 

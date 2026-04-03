@@ -30,17 +30,19 @@ public class ProcessScannerTask extends RecursiveAction {
                         totalTicks
                 );
 
-                ProcessRecord existing = registry.findAnyByOriginalName(record.getOriginalName());
+                synchronized (registry.getLockForName(record.getOriginalName())) {
+                    ProcessRecord existing = registry.findAnyByOriginalName(record.getOriginalName());
 
-                if (existing != null) {
-                    record.setCategory(existing.getCategory());
-                    record.setAliasName(existing.getAliasName());
-                    record.setIsTrackingFrozen(existing.getIsTrackingFrozen());
-                    record.setSessionTimeMilliseconds(existing.getSessionTimeMilliseconds());
-                    record.setStartTimeMilliseconds(existing.getStartTimeMilliseconds());
+                    if (existing != null) {
+                        record.setCategory(existing.getCategory());
+                        record.setAliasName(existing.getAliasName());
+                        record.setIsTrackingFrozen(existing.getIsTrackingFrozen());
+                        record.setSessionTimeMilliseconds(existing.getSessionTimeMilliseconds());
+                        record.setStartTimeMilliseconds(existing.getStartTimeMilliseconds());
+                    }
+
+                    registry.updateProcess(record);
                 }
-
-                registry.updateProcess(record);
             }
         } else {
             int mid = processes.size() / 2;

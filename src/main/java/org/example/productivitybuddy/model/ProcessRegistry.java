@@ -13,29 +13,29 @@ public class ProcessRegistry {
 
     public void updateProcess(ProcessRecord newProcess) {
         processes.merge(newProcess.getPid(), newProcess, (oldP, newP) -> {
-            synchronized (oldP) {
-                if(!oldP.getIsTrackingFrozen()) {
-                    long prevTicks = oldP.getPreviousTotalCpuTicks();
-                    long prevTimestamp = oldP.getLastSeenTimestamp();
-                    long systemTimeMillis = System.currentTimeMillis();
-                    double cpuUsage = oldP.getCpuUsage();
+            long systemTimeMillis = System.currentTimeMillis();
 
-                    if (prevTicks > 0 && prevTimestamp > 0) {
-                        long deltaTicks = newP.getTotalTicks() - prevTicks;
-                        long deltaTime = systemTimeMillis - prevTimestamp;
+            if(!oldP.getIsTrackingFrozen()) {
+                long prevTicks = oldP.getPreviousTotalCpuTicks();
+                long prevTimestamp = oldP.getLastSeenTimestamp();
+                long deltaTime = systemTimeMillis - prevTimestamp;
+                double cpuUsage = oldP.getCpuUsage();
 
-                        if (deltaTime > 0) {
-                            cpuUsage = (deltaTicks / (double) deltaTime) * 100.0;
-                        }
+                if (prevTicks > 0 && prevTimestamp > 0) {
+                    long deltaTicks = newP.getTotalTicks() - prevTicks;
+
+
+                    if (deltaTime > 0) {
+                        cpuUsage = (deltaTicks / (double) deltaTime) * 100.0;
                     }
-
-                    oldP.setSessionTimeMilliseconds(oldP.getSessionTimeMilliseconds() + MyConfig.MONITOR_INTERVAL.get());
-                    oldP.setLastSeenTimestamp(systemTimeMillis);
-                    oldP.setPreviousTotalCpuTicks(newP.getTotalTicks());
-                    oldP.setRamUsage(newP.getRamUsage());
-                    oldP.setCpuUsage(cpuUsage);
                 }
+
+                oldP.setSessionTimeMilliseconds(oldP.getSessionTimeMilliseconds() + deltaTime);
+                oldP.setPreviousTotalCpuTicks(newP.getTotalTicks());
+                oldP.setRamUsage(newP.getRamUsage());
+                oldP.setCpuUsage(cpuUsage);
             }
+            oldP.setLastSeenTimestamp(systemTimeMillis);
 
             return oldP;
         });
@@ -60,60 +60,60 @@ public class ProcessRegistry {
         ProcessHandle.of(pid).ifPresent(ProcessHandle::destroy);
     }
 
-    public void renameProcess(String aliasName, String newName) {
-        Object lock = getLockForName(aliasName);
+    public void renameProcess(String originalName, String newName) {
+        Object lock = getLockForName(originalName);
 
         synchronized (lock) {
             for (ProcessRecord p : processes.values()) {
-                if (aliasName.equals(p.getAliasName())) {
+                if (originalName.equals(p.getOriginalName())) {
                     p.setAliasName(newName);
                 }
             }
         }
     }
 
-    public void toggleFreezeProcess(String name) {
-        Object lock = getLockForName(name);
+    public void toggleFreezeProcess(String originalName) {
+        Object lock = getLockForName(originalName);
 
         synchronized (lock) {
             for (ProcessRecord p : processes.values()) {
-                if (name.equals(p.getAliasName())) {
-                    synchronized (p) {
-                        p.toggleIsTrackingFrozen();
-                    }
+                if (originalName.equals(p.getOriginalName())) {
+                    p.toggleIsTrackingFrozen();
                 }
             }
         }
     }
 
-    public void changeProcessCategory(String name, ProcessCategory newCategory) {
-        Object lock = getLockForName(name);
+    public void changeProcessCategory(String originalName, ProcessCategory newCategory) {
+        Object lock = getLockForName(originalName);
 
         synchronized (lock) {
             for (ProcessRecord p : processes.values()) {
-                if (name.equals(p.getAliasName())) {
-                    synchronized (p) {
-                        p.setCategory(newCategory);
-                    }
+                if (originalName.equals(p.getOriginalName())) {
+                    p.setCategory(newCategory);
                 }
             }
         }
     }
 
-    private Object getLockForName(String name) {
+    public Object getLockForName(String name) {
         return nameLocks.computeIfAbsent(name, k -> new Object());
     }
 
     public void applyLoadedState(ProcessInfoDTO dto, boolean resetSessionTime) {
         processes.values().forEach(p -> {
             if (p.getOriginalName().equals(dto.originalName)) {
-                p.setAliasName(dto.aliasName);
-                p.setCategory(ProcessCategory.valueOf(dto.category));
-                p.setIsTrackingFrozen(dto.isTrackingFreezed);
-                p.setStartTimeMilliseconds(dto.totalTimeSeconds * 1000);
+                Object lock = getLockForName(p.getOriginalName());
 
-                if(resetSessionTime) {
-                    p.setSessionTimeMilliseconds(0);
+                synchronized (lock) {
+                    p.setAliasName(dto.aliasName);
+                    p.setCategory(ProcessCategory.valueOf(dto.category));
+                    p.setIsTrackingFrozen(dto.isTrackingFreezed);
+                    p.setStartTimeMilliseconds(dto.totalTimeSeconds * 1000);
+
+                    if (resetSessionTime) {
+                        p.setSessionTimeMilliseconds(0);
+                    }
                 }
             }
         });

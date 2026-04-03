@@ -13,7 +13,7 @@ public class ProcessRecord {
     private volatile ProcessCategory category;
 
     private volatile double cpuUsage;
-    private volatile long ramUsage;
+    private final AtomicLong ramUsage;
     private final AtomicLong previousTotalCpuTicks;
 
     private final AtomicBoolean isTrackingFrozen;
@@ -26,7 +26,7 @@ public class ProcessRecord {
     public ProcessRecord(int pid, String originalName, long ramUsage, long totalTicks) {
         this.pid = pid;
         this.originalName = originalName;
-        this.ramUsage = ramUsage;
+        this.ramUsage = new AtomicLong(ramUsage);
         this.totalTicks = new AtomicLong(totalTicks);
 
         this.aliasName = originalName;
@@ -103,7 +103,7 @@ public class ProcessRecord {
     }
 
     public long getRamUsage() {
-        return ramUsage;
+        return ramUsage.get();
     }
 
     public String getOriginalName() {
@@ -111,7 +111,7 @@ public class ProcessRecord {
     }
 
     public void setRamUsage(long ramUsage) {
-        this.ramUsage = ramUsage;
+        this.ramUsage.set(ramUsage);
     }
 
     public void setCategory(ProcessCategory category) {

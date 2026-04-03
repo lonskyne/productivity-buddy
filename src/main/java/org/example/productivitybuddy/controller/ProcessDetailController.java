@@ -5,6 +5,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextInputDialog;
+import org.example.productivitybuddy.model.AnalyticsSnapshot;
 import org.example.productivitybuddy.model.ProcessSnapshot;
 import org.example.productivitybuddy.services.AnalyticsService;
 import org.example.productivitybuddy.model.ProcessCategory;
@@ -35,8 +36,8 @@ public class ProcessDetailController {
     }
 
 
-    public void updateDetailView() {
-        this.process = analyticsService.getSnapshot().getProcessByPid(processPid);
+    public void updateDetailView(AnalyticsSnapshot snapshot) {
+        this.process = snapshot.getProcessByPid(processPid);
 
         nameLabel.setText(process.getAliasName());
 
@@ -89,7 +90,7 @@ public class ProcessDetailController {
     }
 
     @FXML private void onFreeze() {
-        registry.toggleFreezeProcess(process.getAliasName());
+        registry.toggleFreezeProcess(process.getOriginalName());
 
     }
 
@@ -103,7 +104,7 @@ public class ProcessDetailController {
         Optional<String> result = dialog.showAndWait();
         result.ifPresent(newName -> {
             nameLabel.setText(newName);
-            registry.renameProcess(process.getAliasName(), newName);
+            registry.renameProcess(process.getOriginalName(), newName);
         });
     }
 
@@ -115,7 +116,7 @@ public class ProcessDetailController {
 
         Optional<ProcessCategory> result = dialog.showAndWait();
         result.ifPresent(category -> {
-            registry.changeProcessCategory(process.getAliasName(), category);
+            registry.changeProcessCategory(process.getOriginalName(), category);
         });
     }
 }

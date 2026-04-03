@@ -5,7 +5,6 @@ import org.example.productivitybuddy.dto.ProcessInfoDTO;
 import org.example.productivitybuddy.dto.ProcessInfoWrapper;
 import org.example.productivitybuddy.model.AnalyticsSnapshot;
 import org.example.productivitybuddy.model.MyConfig;
-import org.example.productivitybuddy.model.ProcessRecord;
 import org.example.productivitybuddy.model.ProcessSnapshot;
 
 import java.nio.file.Files;
@@ -88,8 +87,11 @@ public class FileService implements SnapshotListener {
                 }).toList();
 
                 watcher.isInternalWrite.set(true);
-                writeJson(wrapper, path);
-                watcher.isInternalWrite.set(false);
+                try {
+                    writeJson(wrapper, path);
+                } finally {
+                    watcher.isInternalWrite.set(false);
+                }
 
             } catch (Exception e) {
                 e.printStackTrace();
